@@ -103,6 +103,8 @@ set -e
 [ "$code" -eq 0 ] || fail "mimir derive (accept) returned $code — expected 0"
 [ -f "$WORK/def.json" ] || fail "mimir did not write $WORK/def.json"
 # mimir emits COMPACT single-line JSON, so count occurrences (grep -o), not matching lines (grep -c).
+# This counts MEMBER names; it is exact only because `params` is ALWAYS empty here (a Param also
+# carries a "name" key — a non-empty params array would inflate this count).
 mcount="$(grep -o '"name"' "$WORK/def.json" | wc -l | tr -d '[:space:]')"
 [ "$mcount" -eq 4 ] || fail "expected 4 members in def.json, got $mcount"
 grep -Eq '"high"[[:space:]]*:[[:space:]]*3000(\.0)?' "$WORK/def.json" \
@@ -131,8 +133,8 @@ set +e
 java -jar "$GATES_JAR_WIN" schema "$REGISTRY_WIN" "$DEF_BREAKING_WIN"
 code=$?
 set -e
-[ "$code" -ne 0 ] || fail "schema gate ACCEPTED a breaking re-derive (exit 0) — expected reject (member.removed)"
-echo "[GATE] reject OK: schema rejected the breaking re-derive (exit $code, non-zero)"
+[ "$code" -eq 1 ] || fail "schema gate did not reject with violations (exit $code, wanted 1 = member.removed) — a non-1 exit is a gate ERROR, not a governance rejection"
+echo "[GATE] reject OK: schema rejected the breaking re-derive (exit $code = member.removed)"
 
 echo ""
 echo "[GATE] PASS run-mimir-gate.sh"
