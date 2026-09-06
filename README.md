@@ -1,3 +1,5 @@
+[![CI](https://github.com/yggdrasil-iiot/mimir/actions/workflows/ci.yml/badge.svg)](https://github.com/yggdrasil-iiot/mimir/actions/workflows/ci.yml)
+
 Mímir — the northbound **modeler** of the Yggdrasil IIoT governance portfolio: it browses an OPC-UA type space and *derives/proposes* a canonical, AAS-aligned UDT definition for Bifrost's governance gates to admit. It is a design-time producer and a separate app, coupled to the rest only by a published data/wire contract — **zero shared code** (its own value types, no Bifrost dependency).
 
 ## Role in the governance spine
