@@ -1,3 +1,6 @@
+# The Mímir gate is deliberately cross-repo: Mímir only *proposes* a definition, and it is not
+# canonical until Bifrost's `gates schema` admits it. Proving that means having Bifrost present,
+# so the sibling checkout below is the point of the gate, not a workaround for it.
 name: CI
 
 on:
@@ -11,16 +14,29 @@ permissions:
 
 jobs:
   build:
-    name: tests + gate
+    name: tests + gate (with Bifrost)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: mimir
+
+      - name: Check out Bifrost as a sibling
+        uses: actions/checkout@v4
+        with:
+          repository: yggdrasil-iiot/bifrost
+          path: bifrost
+
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: temurin
           cache: maven
+
       - name: Build and test
+        working-directory: mimir
         run: mvn -B -ntp install
-      - name: Mímir gate
+
+      - name: 'Gate — browse an OPC-UA type, derive, and have Bifrost admit it'
+        working-directory: mimir
         run: bash scripts/run-mimir-gate.sh
