@@ -1,12 +1,16 @@
 [![CI](https://github.com/yggdrasil-iiot/mimir/actions/workflows/ci.yml/badge.svg)](https://github.com/yggdrasil-iiot/mimir/actions/workflows/ci.yml)
 
-Mímir — the northbound **modeler** of the Yggdrasil IIoT governance portfolio: it browses an OPC-UA type space and *derives/proposes* a canonical, AAS-aligned UDT definition for Bifrost's governance gates to admit. It is a design-time producer and a separate app, coupled to the rest only by a published data/wire contract — **zero shared code** (its own value types, no Bifrost dependency).
+Mímir — the northbound **modeler** of the Yggdrasil IIoT governance portfolio, and its **read side of the plant**: whatever the spine learns from what already runs there is read here, once, and published as data. It browses an OPC-UA type space and *derives/proposes* a canonical, AAS-aligned UDT definition for Bifrost's governance gates to admit. It is a design-time producer and a separate app, coupled to the rest only by a published data/wire contract — **zero shared code** (its own value types, no Bifrost dependency).
 
 ## Role in the governance spine
 
 ```
-Mímir (model) ──▶ Bifrost (govern) ──▶ Muninn (feed the UNS)
+                ┌─▶ Bifrost (govern) ─▶ Muninn (feed the UNS)    UDT definitions — built
+Mímir (read) ───┼─▶ Týr (author mappings) ─▶ Bifrost (govern)    vendor snapshots — planned
+                └─▶ Bifrost (reconcile governed vs current)      vendor snapshots — planned
 ```
+
+One reader per input format: a source the plant already runs is interpreted here and nowhere else, and the other apps consume what Mímir publishes. Vendor tag configurations are the next such source; that work is planned, not built — see [the design note](docs/VENDOR-INTERPRETATION.md).
 
 Mímir is the *production* layer of canonical-model ownership; **Bifrost remains the authority** (it admits, versions, and is the registry-of-record). Mímir only proposes — a derived definition is not canonical until Bifrost's gate governs it. Concretely, Mímir:
 
@@ -36,7 +40,7 @@ java -jar target/mimir.jar derive <endpoint> <nsUri> <typeBrowseName> <templateR
 
 ## Honest scope
 
-- Design-time, low-frequency (once per type), not a runtime data path.
+- Design-time and low-frequency — once per type for OPC-UA derivation, and once per handed-over configuration snapshot for vendor interpretation, which is planned — and not a runtime data path.
 - The OPC-UA DataType is reconstituted to the exact string vocabulary Bifrost's gate expects (`11→"Double"`, `1→"Boolean"`); `semanticId` is synthesized from a local-IRI convention (the type node carries none).
 - `range=null` (an unconstrained numeric) is indistinguishable from any other unconstrained numeric on the type node — deny/constraint semantics live on the spec side, not the equipment type.
 
