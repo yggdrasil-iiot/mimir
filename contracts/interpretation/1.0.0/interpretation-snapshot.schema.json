@@ -186,8 +186,8 @@
           "type": "object",
           "properties": {
             "capture": { "enum": ["unknown", "partial", "declared-complete"] },
-            "artifactsRead": { "type": "integer", "minimum": 0 },
-            "artifactsSkipped": { "type": "integer", "minimum": 0 }
+            "artifactsRead": { "type": "integer", "minimum": 0, "maximum": 10000 },
+            "artifactsSkipped": { "type": "integer", "minimum": 0, "maximum": 10000 }
           },
           "required": ["capture", "artifactsRead", "artifactsSkipped"],
           "additionalProperties": false

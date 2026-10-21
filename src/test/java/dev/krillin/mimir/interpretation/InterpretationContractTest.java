@@ -86,12 +86,24 @@ class InterpretationContractTest {
         if (c.get("restamp").asBoolean()) {
             doc.set("digest", TextNode.valueOf(InterpretationDigest.compute(doc)));
         }
-        Runnable check = switch (c.get("mode").asText()) {
+        JsonNode companions = c.path("companions");
+        String mode = c.get("mode").asText();
+        JsonNode first = switch (mode) {
+            case "pinned", "request" -> companion(companions, "bundle", base, "source-bundle.json");
+            case "result" -> companion(companions, "request", base, "interpret-request.json");
+            default -> null;
+        };
+        JsonNode second = switch (mode) {
+            case "pinned", "request" -> companion(companions, "profile", base, "interpretation-profile.json");
+            case "result" -> companion(companions, "snapshot", base, "interpretation-snapshot.json");
+            default -> null;
+        };
+        Runnable check = switch (mode) {
             case "single" -> () -> InterpretationContract.check(doc);
-            case "pinned" -> () -> InterpretationContract.checkPinned(doc, quiet(base, "source-bundle.json"), quiet(base, "interpretation-profile.json"));
-            case "request" -> () -> InterpretationContract.checkRequest(doc, quiet(base, "source-bundle.json"), quiet(base, "interpretation-profile.json"));
-            case "result" -> () -> InterpretationContract.checkResult(doc, quiet(base, "interpret-request.json"), quiet(base, "interpretation-snapshot.json"));
-            default -> throw new IllegalArgumentException(c.get("mode").asText());
+            case "pinned" -> () -> InterpretationContract.checkPinned(doc, first, second);
+            case "request" -> () -> InterpretationContract.checkRequest(doc, first, second);
+            case "result" -> () -> InterpretationContract.checkResult(doc, first, second);
+            default -> throw new IllegalArgumentException(mode);
         };
         if (c.get("expect").isNull()) {
             assertDoesNotThrow(check::run);
@@ -101,12 +113,20 @@ class InterpretationContractTest {
         }
     }
 
-    private static JsonNode quiet(String base, String file) {
-        try {
+    /** The document a case is checked against: the same base by default, or another base and/or edited. */
+    private static JsonNode companion(JsonNode companions, String role, String base, String file) throws Exception {
+        JsonNode spec = companions.path(role);
+        if (spec.isMissingNode()) {
             return load(base, file);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
         }
+        ObjectNode doc = (ObjectNode) load(spec.path("base").asText(base), file);
+        for (JsonNode edit : spec.path("edits")) {
+            apply(doc, edit);
+        }
+        if (spec.path("restamp").asBoolean(false)) {
+            doc.set("digest", TextNode.valueOf(InterpretationDigest.compute(doc)));
+        }
+        return doc;
     }
 
     /** JSON-pointer set/remove; enough for the cases file, not a general JSON Patch. */

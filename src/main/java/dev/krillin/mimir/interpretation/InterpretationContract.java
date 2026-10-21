@@ -101,7 +101,7 @@ public final class InterpretationContract {
             if (!artifacts.get(id).equals(pin.get("sha256").asText())) throw new ContractViolation("pin.artifact-mismatch", id);
         }
         JsonNode coverage = body.get("coverage");
-        if (coverage.get("artifactsRead").asInt() + coverage.get("artifactsSkipped").asInt() > artifacts.size()) {
+        if (coverage.get("artifactsRead").asLong() + coverage.get("artifactsSkipped").asLong() > artifacts.size()) {
             throw new ContractViolation("snapshot.coverage-mismatch", "more artifacts counted than the bundle holds");
         }
 
@@ -135,14 +135,33 @@ public final class InterpretationContract {
         }
     }
 
+    /** Checks a result against its request and, when accepted, that the snapshot came from exactly what was requested. */
     public static void checkResult(JsonNode result, JsonNode request, JsonNode snapshot) {
         check(result);
+        check(request);
         if (!result.get("requestId").asText().equals(request.get("requestId").asText())) {
             throw new ContractViolation("result.request-mismatch", result.get("requestId").asText());
         }
-        if (result.has("snapshotRef")) {
-            check(snapshot);
-            requireRef(result.get("snapshotRef"), snapshot, "pin.snapshot-mismatch");
+        if (!result.has("snapshotRef")) {
+            return;
+        }
+        check(snapshot);
+        requireRef(result.get("snapshotRef"), snapshot, "pin.snapshot-mismatch");
+        JsonNode body = snapshot.get("body");
+        if (!body.get("bundleRef").equals(request.get("bundleRef"))) {
+            throw new ContractViolation("pin.bundle-mismatch", "snapshot and request name different bundles");
+        }
+        if (!body.get("profileRef").equals(request.get("profileRef"))) {
+            throw new ContractViolation("pin.profile-mismatch", "snapshot and request name different profiles");
+        }
+        Map<String, String> requested = new HashMap<>();
+        for (JsonNode pin : request.get("artifactPins")) {
+            requested.put(pin.get("artifactId").asText(), pin.get("sha256").asText());
+        }
+        for (JsonNode pin : body.get("inputManifest")) {
+            String id = pin.get("artifactId").asText();
+            if (!requested.containsKey(id)) throw new ContractViolation("pin.artifact-unknown", "not requested: " + id);
+            if (!requested.get(id).equals(pin.get("sha256").asText())) throw new ContractViolation("pin.artifact-mismatch", id);
         }
     }
 
@@ -184,7 +203,7 @@ public final class InterpretationContract {
                 throw new ContractViolation("snapshot.id-duplicate", "inputManifest:" + p.get("artifactId").asText());
             }
         }
-        if (body.get("coverage").get("artifactsRead").asInt() != pinned.size()) {
+        if (body.get("coverage").get("artifactsRead").asLong() != pinned.size()) {
             throw new ContractViolation("snapshot.coverage-mismatch", "artifactsRead differs from inputManifest");
         }
         Set<String> nodes = unique(body.get("nativeNodes"), "nodeId");
