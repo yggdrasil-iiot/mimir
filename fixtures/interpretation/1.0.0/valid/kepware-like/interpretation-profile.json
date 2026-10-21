@@ -1,0 +1,24 @@
+{
+  "kind": "interpretation-profile",
+  "contractVersion": "1.0.0",
+  "id": "synthetic/kepware-like/profile",
+  "version": "1.0.0",
+  "body": {
+    "interpreter": {
+      "name": "synthetic-kepware-like-interpreter",
+      "version": "0.1.0",
+      "implementationDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "supports": [
+      { "product": "synthetic-kepware-like", "versions": ["1"], "drivers": ["synthetic-driver"], "inputFormats": ["synthetic-json-project"], "patterns": ["linear scaling", "tag reference by name"] }
+    ],
+    "unknownVersionPolicy": "reject",
+    "rules": [
+      { "ruleId": "synthetic-kepware-like.linear-scaling", "version": "1.0.0", "summary": "eng = engLow + (raw - rawLow) * (engHigh - engLow) / (rawHigh - rawLow)" },
+      { "ruleId": "synthetic-kepware-like.reference-by-name", "version": "1.0.0", "summary": "a dotted name resolves from the channel; a bare name matches any tag of that name" }
+    ],
+    "limits": { "maxArtifacts": 10, "maxTotalBytes": 10485760, "maxReferenceDepth": 16, "maxNodes": 100000 },
+    "knownGaps": ["a bare-name reference that matches more than one tag is left ambiguous, never chosen"]
+  },
+  "digest": "1764b3c4827a530f1118feed5d3f7287a694c5077e8932e20dcc8aabc55eec0f"
+}

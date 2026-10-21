@@ -37,6 +37,12 @@ jobs:
         working-directory: mimir
         run: mvn -B -ntp install
 
+      - name: 'Interpretation contract — the independent Python digest agrees with the vectors and the fixtures'
+        working-directory: mimir
+        run: |
+          python3 scripts/interpretation_digest.py vectors fixtures/interpretation/1.0.0/jcs-vectors.json
+          python3 scripts/interpretation_digest.py check fixtures/interpretation
+
       - name: 'Gate — browse an OPC-UA type, derive, and have Bifrost admit it'
         working-directory: mimir
         run: bash scripts/run-mimir-gate.sh

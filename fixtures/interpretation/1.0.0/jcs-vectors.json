@@ -1,0 +1,49 @@
+{
+  "about": "Canonical forms written by hand from RFC 8785 (sorting example from section 3.2.3), not produced by either implementation. Both the Java checker and scripts/interpretation_digest.py must reproduce them.",
+  "canonical": [
+    {
+      "name": "rfc8785-sort-by-utf16-code-units",
+      "input": "{\"\\u20ac\":\"Euro Sign\",\"\\r\":\"Carriage Return\",\"\\ufb33\":\"Hebrew Letter Dalet With Dagesh\",\"1\":\"One\",\"\\ud83d\\ude00\":\"Emoji: Grinning Face\",\"\\u0080\":\"Control\",\"\\u00f6\":\"Latin Small Letter O With Diaeresis\"}",
+      "canonical": "{\"\\r\":\"Carriage Return\",\"1\":\"One\",\"\u0080\":\"Control\",\"\u00f6\":\"Latin Small Letter O With Diaeresis\",\"\u20ac\":\"Euro Sign\",\"\ud83d\ude00\":\"Emoji: Grinning Face\",\"\ufb33\":\"Hebrew Letter Dalet With Dagesh\"}"
+    },
+    {
+      "name": "string-escapes-minimal",
+      "input": "{\"a\":\"\\u0000\\b\\f\\n\\r\\t\\\"\\\\\\/\\u001f\\u007f\\u2028\"}",
+      "canonical": "{\"a\":\"\\u0000\\b\\f\\n\\r\\t\\\"\\\\/\\u001f\u007f\u2028\"}"
+    },
+    {
+      "name": "whitespace-nesting-integers",
+      "input": " { \"z\" : [ 3 , -1 , 0 , 9007199254740991 , -9007199254740991 ] , \"a\" : { \"y\" : true , \"b\" : null , \"c\" : false } } ",
+      "canonical": "{\"a\":{\"b\":null,\"c\":false,\"y\":true},\"z\":[3,-1,0,9007199254740991,-9007199254740991]}"
+    },
+    {
+      "name": "empty-containers-and-string",
+      "input": "{\"e\":{},\"d\":[],\"s\":\"\"}",
+      "canonical": "{\"d\":[],\"e\":{},\"s\":\"\"}"
+    },
+    {
+      "name": "case-and-prefix-ordering",
+      "input": "{\"b\":1,\"B\":2,\"a\":3,\"aa\":4,\"A\":5}",
+      "canonical": "{\"A\":5,\"B\":2,\"a\":3,\"aa\":4,\"b\":1}"
+    },
+    {
+      "name": "negative-zero-is-zero",
+      "input": "{\"n\":-0}",
+      "canonical": "{\"n\":0}"
+    },
+    {
+      "name": "non-ascii-kept-raw",
+      "input": "{\"k\":\"\uae30\uc900 \ubaa8\ub378 \\ud83d\\ude00\"}",
+      "canonical": "{\"k\":\"\uae30\uc900 \ubaa8\ub378 \ud83d\ude00\"}"
+    }
+  ],
+  "rejected": [
+    { "name": "decimal", "input": "{\"x\":1.5}", "code": "jcs.non-integer-number" },
+    { "name": "integral-decimal", "input": "{\"x\":1.0}", "code": "jcs.non-integer-number" },
+    { "name": "exponent", "input": "{\"x\":1e3}", "code": "jcs.non-integer-number" },
+    { "name": "above-safe-range", "input": "{\"x\":9007199254740992}", "code": "jcs.unsafe-integer" },
+    { "name": "below-safe-range", "input": "{\"x\":-9007199254740992}", "code": "jcs.unsafe-integer" },
+    { "name": "lone-surrogate", "input": "{\"x\":\"\\ud800\"}", "code": "jcs.lone-surrogate" },
+    { "name": "duplicate-key", "input": "{\"x\":1,\"x\":2}", "code": "json.duplicate-key" }
+  ]
+}

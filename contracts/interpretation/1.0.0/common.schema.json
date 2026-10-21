@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:mimir:interpretation:1.0.0:common.schema.json",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9._/-]*$",
+      "maxLength": 200
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*\\\\)(?!.*:)[a-zA-Z0-9._/-]+$",
+      "maxLength": 400
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$"
+    },
+    "scalar": {
+      "description": "Numbers are integers only; a decimal travels as a string so that every implementation serializes it to the same bytes.",
+      "type": ["string", "integer", "boolean", "null"]
+    },
+    "digestRef": {
+      "type": "object",
+      "properties": {
+        "kind": { "enum": ["source-bundle", "interpretation-profile", "interpretation-snapshot"] },
+        "id": { "$ref": "#/$defs/id" },
+        "version": { "$ref": "#/$defs/version" },
+        "digest": { "$ref": "#/$defs/sha256" }
+      },
+      "required": ["kind", "id", "version", "digest"],
+      "additionalProperties": false
+    },
+    "artifactPin": {
+      "type": "object",
+      "properties": {
+        "artifactId": { "$ref": "#/$defs/id" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "required": ["artifactId", "sha256"],
+      "additionalProperties": false
+    },
+    "locator": {
+      "type": "object",
+      "properties": {
+        "artifactId": { "$ref": "#/$defs/id" },
+        "at": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": { "const": "text-line" },
+                "line": { "type": "integer", "minimum": 1 },
+                "column": { "type": "integer", "minimum": 1 }
+              },
+              "required": ["kind", "line"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": { "const": "json-pointer" },
+                "pointer": { "type": "string", "pattern": "^(/([^~/]|~[01])*)*$", "maxLength": 1000 }
+              },
+              "required": ["kind", "pointer"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": { "const": "xml-path" },
+                "path": { "type": "string", "minLength": 1, "maxLength": 1000 }
+              },
+              "required": ["kind", "path"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": { "const": "table-cell" },
+                "sheet": { "type": "string", "maxLength": 200 },
+                "row": { "type": "integer", "minimum": 1 },
+                "column": { "type": "string", "pattern": "^[A-Z]{1,3}$" }
+              },
+              "required": ["kind", "row", "column"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": { "const": "byte-range" },
+                "offset": { "type": "integer", "minimum": 0 },
+                "length": { "type": "integer", "minimum": 1 }
+              },
+              "required": ["kind", "offset", "length"],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": ["artifactId", "at"],
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "properties": {
+        "code": { "$ref": "#/$defs/id" },
+        "severity": { "enum": ["info", "warning", "error"] },
+        "message": { "$ref": "#/$defs/text" },
+        "locator": { "$ref": "#/$defs/locator" }
+      },
+      "required": ["code", "severity", "message"],
+      "additionalProperties": false
+    },
+    "envelope": {
+      "description": "Outside the digest: when and for which request a document was produced.",
+      "type": "object",
+      "properties": {
+        "createdAt": { "$ref": "#/$defs/timestamp" },
+        "requestId": { "$ref": "#/$defs/id" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

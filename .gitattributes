@@ -1,0 +1,4 @@
+# Contract schemas are copied byte for byte by consumers, and fixture artifacts and documents are
+# pinned by SHA-256. A line-ending conversion would change those bytes.
+contracts/** -text
+fixtures/interpretation/** -text
