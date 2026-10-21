@@ -41,7 +41,7 @@ java -jar target/mimir.jar derive <endpoint> <nsUri> <typeBrowseName> <templateR
 ## Honest scope
 
 - Design-time and low-frequency — once per type for OPC-UA derivation, and once per handed-over configuration snapshot for vendor interpretation, which is planned — and not a runtime data path.
-- The OPC-UA DataType is reconstituted to the exact string vocabulary Bifrost's gate expects (`11→"Double"`, `1→"Boolean"`); `semanticId` is synthesized from a local-IRI convention (the type node carries none).
+- The OPC-UA DataType is reconstituted to the exact string vocabulary Bifrost's gate expects (`11→"Double"`, `1→"Boolean"`); `semanticId` is synthesized from a local-IRI convention (the type node carries none). The synthesized local IRI is a placeholder, not a pointer to an entry in the enterprise semantic dictionary; that dictionary sits outside Yggdrasil; linking a `semanticId` to a dictionary entry is not built.
 - `range=null` (an unconstrained numeric) is indistinguishable from any other unconstrained numeric on the type node — deny/constraint semantics live on the spec side, not the equipment type.
 
 ## Dependencies
