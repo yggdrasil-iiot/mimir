@@ -1,0 +1,25 @@
+{
+  "about": "synthetic-kepware-like project. An invented structure for contract tests; not a vendor export.",
+  "channels": [
+    {
+      "name": "Ch1",
+      "driver": "synthetic-driver",
+      "devices": [
+        {
+          "name": "Dev1",
+          "tags": [
+            { "name": "Speed", "address": "40001", "scaling": { "type": "linear", "rawLow": 0, "rawHigh": 1000, "engLow": 0, "engHigh": 100 } },
+            { "name": "Alias", "ref": "Ch1.Dev2.Speed" },
+            { "name": "Pick", "ref": "Speed" }
+          ]
+        },
+        {
+          "name": "Dev3",
+          "tags": [
+            { "name": "Speed", "address": "40011" }
+          ]
+        }
+      ]
+    }
+  ]
+}

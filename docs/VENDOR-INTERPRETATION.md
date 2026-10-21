@@ -1,7 +1,6 @@
 # Vendor configuration interpretation — design note
 
-Status, 2026-10-20: **planned, not built.** No interpreter, schema, fixture or command for vendor
-configurations exists in this repository. No product, version or export format is supported.
+Status as of 2026-10-21: **the wire contract for interpretation snapshots exists** (version 1.0.0, under `contracts/interpretation/1.0.0/`, described in `contracts/interpretation/README.md`). No interpreter exists, and no product, version or export format is supported. The fixtures are synthetic.
 
 ## The decision
 

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:mimir:interpretation:1.0.0:interpret-request.schema.json",
+  "title": "InterpretRequest — interpret these pinned bytes under this profile; nothing is fetched",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "interpret-request" },
+    "contractVersion": { "const": "1.0.0" },
+    "requestId": { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/id" },
+    "bundleRef": {
+      "allOf": [
+        { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/digestRef" },
+        { "properties": { "kind": { "const": "source-bundle" } } }
+      ]
+    },
+    "artifactPins": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/artifactPin" }
+    },
+    "profileRef": {
+      "allOf": [
+        { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/digestRef" },
+        { "properties": { "kind": { "const": "interpretation-profile" } } }
+      ]
+    },
+    "hints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subject": { "enum": ["product", "version", "driver", "format"] },
+          "value": { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/text" },
+          "basis": { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/text" }
+        },
+        "required": ["subject", "value", "basis"],
+        "additionalProperties": false
+      }
+    },
+    "context": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/id" },
+          "value": { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/text" }
+        },
+        "required": ["key", "value"],
+        "additionalProperties": false
+      }
+    },
+    "endpointFilter": {
+      "description": "Narrows what a result lists. It never hides diagnostics for the rest of the input.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 }
+    }
+  },
+  "required": ["kind", "contractVersion", "requestId", "bundleRef", "artifactPins", "profileRef", "hints", "context"],
+  "additionalProperties": false
+}

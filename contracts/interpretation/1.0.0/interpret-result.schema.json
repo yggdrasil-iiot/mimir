@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:mimir:interpretation:1.0.0:interpret-result.schema.json",
+  "title": "InterpretResult — the outcome of one request; a partial read is not a successful interpretation",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "interpret-result" },
+    "contractVersion": { "const": "1.0.0" },
+    "requestId": { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/id" },
+    "status": { "enum": ["accepted-for-interpretation", "unsupported-profile", "invalid-input", "limit-exceeded"] },
+    "snapshotRef": {
+      "allOf": [
+        { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/digestRef" },
+        { "properties": { "kind": { "const": "interpretation-snapshot" } } }
+      ]
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/diagnostic" }
+    },
+    "envelope": { "$ref": "urn:mimir:interpretation:1.0.0:common.schema.json#/$defs/envelope" }
+  },
+  "required": ["kind", "contractVersion", "requestId", "status", "diagnostics"],
+  "additionalProperties": false,
+  "if": { "properties": { "status": { "const": "accepted-for-interpretation" } } },
+  "then": { "required": ["snapshotRef"] },
+  "else": {
+    "not": { "required": ["snapshotRef"] },
+    "properties": { "diagnostics": { "minItems": 1 } }
+  }
+}
