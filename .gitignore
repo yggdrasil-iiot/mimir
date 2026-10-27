@@ -3,3 +3,5 @@ build/
 dependency-reduced-pom.xml
 
 ignition-lab/.env
+ignition-lab/exports/*/heldout/
+ignition-lab/scenarios/heldout-*/

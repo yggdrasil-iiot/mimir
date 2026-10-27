@@ -1,6 +1,6 @@
 # Vendor configuration interpretation — design note
 
-Status as of 2026-10-27: **the wire contract for interpretation snapshots exists** (versions 1.0.0 and 1.1.0, under `contracts/interpretation/1.0.0/` and `contracts/interpretation/1.1.0/`, described in `contracts/interpretation/README.md`; 1.1.0 adds read/write/event access on dependencies and an explicit state marker). No interpreter exists, and no product, version or export format is supported. The fixtures are synthetic.
+Status as of 2026-10-28: **the wire contract for interpretation snapshots exists** (versions 1.0.0 and 1.1.0, under `contracts/interpretation/1.0.0/` and `contracts/interpretation/1.1.0/`, described in `contracts/interpretation/README.md`; 1.1.0 adds read/write/event access on dependencies and an explicit state marker). The first interpreter now exists: Ignition 8.3.10 REST `tags/export` JSON offline input, interpretation snapshot contract 1.1.0, namespace `ignition83`, rule version 1.2.0, interpreter 0.3.0. Invented contract fixtures are distinct from the authored dev-1 scenario exported through a real gateway.
 
 ## The decision
 
@@ -68,15 +68,18 @@ Copies come from exports people already make before editing. A resident collecto
 
 A provided copy is not proof that it is the configuration currently running.
 
-Interpretation of each copy, when an interpreter exists, follows the same single-reader rule as the rest of this note.
+Ignition interpretation exists and follows the same single-reader rule as the rest of this note. Snapshot history, collection, diffing, and rollback workflows remain planned. History management remains separate.
 
 ## Products
 
-| Product | Evidence in hand |
-|---|---|
-| Kepware | none — product, version, driver and export format not yet obtained |
-| BEAN PIO | public product description only |
-| BEAN TAG MANAGER | product name only; its relation to the public TM Core / TM Connector is unconfirmed |
+| Product | Version | Input | Evidence in hand |
+|---|---|---|---|
+| Ignition | 8.3.10 | REST `tags/export` JSON | implementation, mapping/key specifications, published dev-1 gateway export and key, local Docker lab, maintainer-reported blind evaluation at `9662e1f`. |
+| Kepware | — | — | none — product, version, driver and export format not yet obtained |
+| BEAN PIO | — | — | public product description only |
+| BEAN TAG MANAGER | — | — | product name only; its relation to the public TM Core / TM Connector is unconfirmed |
+
+Resource-directory exports are supporting evidence, not an additional supported interpreter input format.
 
 Support will be stated per product, version, driver and input format, each with its own evidence
 and tests. A synthetic "Kepware-like" fixture passing is not Kepware support.
@@ -87,6 +90,33 @@ The parser-side cases move here from the consumer's plan: unresolved, missing an
 references; evaluation cycles versus harmless structural ones; opaque or unknown containers;
 deterministic re-interpretation of the same bytes; hostile archives (path traversal, excessive
 depth or size). Expected results are written independently of the interpreter under test.
+
+## Ignition 8.3.10 — evidence and measured accuracy
+
+The public dev-1 scenario was authored from scratch. It covers UDT inheritance, overrides, parameters, OPC/memory/expression/reference/derived/database tags, alarm and event-script configuration.
+
+The local lab uses a Docker gateway under a trial/evaluation licence. `lab.py` authenticates using a session and CSRF token; it imports configuration as well as exporting it.
+
+The maintainer-reported held-out evaluation used 10 public third-party exports from 8 authors, unused during development. Each was imported and exported through Ignition 8.3.10 across 332 imports with 0 failures. Keys were independently authored by OpenAI Codex from SPEC 1.2.0 alone. A row-by-row cross-check by Anthropic Claude Fable found 0 key errors. 314 disputed rows (5.0%) were kept in the keys; the interpreter author saw counts only.
+
+The evaluation numbers are from the maintainer's own measurement. Held-out export files and keys are unpublished because most source licences prohibit redistribution; source identities are omitted. These numbers cannot be reproduced from this repository.
+
+| Category | Expected | Matched | Extra | Recall | Precision |
+|---|---|---|---|---|---|
+| Nodes | 972 | 972 | 0 | 100% | 100% |
+| Edges | 1,761 | 1,761 | 9 | 100% | 99.5% |
+| Claims | 2,533 | 2,529 | 40 | 99.8% | 98.4% |
+| Unresolved | 986 | 902 | 5 | 91.5% | 99.4% |
+
+Six files were perfect across categories. Mismatches were concentrated in four files, three containing disputed rows. One file produced nine extra edges without disputed rows; the cause is unknown.
+
+Exact normalized rows are scored separately; unresolved rows coalesce by owner/code. These scores do not measure every evidence detail.
+
+Earlier rounds used different files and code, prompted fixes and specification amendments, and were retired. There is no same-set before/after improvement claim.
+
+Declared profile limits are one artifact, 16 MiB, reference depth 64, and 100,000 nodes. Declaring limits is not proof of enforcement.
+
+The CLI fixes provenance to `synthetic`, capture to `unknown`, acquisition time to `2026-10-27T00:00:00Z`, and product/version claims. It does not perform automatic version detection.
 
 ## If a live read is ever built
 
