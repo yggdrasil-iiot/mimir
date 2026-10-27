@@ -7,7 +7,7 @@ import java.util.List;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 
 /**
- * Mímir CLI entrypoint. Subcommand:
+ * Mimir CLI entrypoint. Subcommand:
  *
  * <pre>
  *   derive &lt;endpoint&gt; &lt;nsUri&gt; &lt;typeBrowseName&gt; &lt;templateRef&gt; &lt;version&gt; &lt;outFile&gt; [--omit &lt;member&gt;]

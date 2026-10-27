@@ -1,18 +1,18 @@
 [![CI](https://github.com/yggdrasil-iiot/mimir/actions/workflows/ci.yml/badge.svg)](https://github.com/yggdrasil-iiot/mimir/actions/workflows/ci.yml)
 
-Mímir — the northbound **modeler** of the Yggdrasil IIoT governance portfolio, and its **read side of the plant**: whatever the spine learns from what already runs there is read here, once, and published as data. It browses an OPC-UA type space and *derives/proposes* a canonical, AAS-aligned UDT definition for Bifrost's governance gates to admit. It is a design-time producer and a separate app, coupled to the rest only by a published data/wire contract — **zero shared code** (its own value types, no Bifrost dependency).
+Mimir (Mímir) — the northbound **modeler** of the Yggdrasil IIoT governance portfolio, and its **read side of the plant**: whatever the spine learns from what already runs there is read here, once, and published as data. It browses an OPC-UA type space and *derives/proposes* a canonical, AAS-aligned UDT definition for Bifrost's governance gates to admit. It is a design-time producer and a separate app, coupled to the rest only by a published data/wire contract — **zero shared code** (its own value types, no Bifrost dependency).
 
 ## Role in the governance spine
 
 ```
                 ┌─▶ Bifrost (govern) ─▶ Muninn (feed the UNS)    UDT definitions — built
-Mímir (read) ───┼─▶ Týr (author mappings) ─▶ Bifrost (govern)    vendor snapshots — planned
+Mimir (read) ───┼─▶ Tyr (author mappings) ─▶ Bifrost (govern)    vendor snapshots — planned
                 └─▶ Bifrost (reconcile governed vs current)      vendor snapshots — planned
 ```
 
-One reader per input format: a source the plant already runs is interpreted here and nowhere else, and the other apps consume what Mímir publishes. Vendor tag configurations are the next such source; that work is planned, not built — see [the design note](docs/VENDOR-INTERPRETATION.md).
+One reader per input format: a source the plant already runs is interpreted here and nowhere else, and the other apps consume what Mimir publishes. Vendor tag configurations are the next such source; that work is planned, not built — see [the design note](docs/VENDOR-INTERPRETATION.md).
 
-Mímir is the *production* layer of canonical-model ownership; **Bifrost remains the authority** (it admits, versions, and is the registry-of-record). Mímir only proposes — a derived definition is not canonical until Bifrost's gate governs it. Concretely, Mímir:
+Mimir is the *production* layer of canonical-model ownership; **Bifrost remains the authority** (it admits, versions, and is the registry-of-record). Mimir only proposes — a derived definition is not canonical until Bifrost's gate governs it. Concretely, Mimir:
 
 1. Milo-client-**browses** an OPC-UA ObjectType (e.g. `MixerType`) — its `HasComponent` members, their DataTypes, and any `EURange` engineering-range properties.
 2. **Derives** a canonical `UdtDefinition` (AAS-submodel-aligned: `name`, `type`, `semanticId`, `range` per member) and writes it as compact JSON.
@@ -36,7 +36,7 @@ java -jar target/mimir.jar derive <endpoint> <nsUri> <typeBrowseName> <templateR
 
 ## Acceptance gate
 
-`scripts/run-mimir-gate.sh` boots the Bifrost sim's OPC-UA server, has Mímir derive `MixerType` live, and runs Bifrost's `gates schema` jar to prove the derived definition is admitted + promoted — and that a breaking re-derive is rejected. Zero shared code: the two repos compose only via the built jar + the derived JSON bytes.
+`scripts/run-mimir-gate.sh` boots the Bifrost sim's OPC-UA server, has Mimir derive `MixerType` live, and runs Bifrost's `gates schema` jar to prove the derived definition is admitted + promoted — and that a breaking re-derive is rejected. Zero shared code: the two repos compose only via the built jar + the derived JSON bytes.
 
 ## Honest scope
 
