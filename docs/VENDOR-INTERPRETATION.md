@@ -1,6 +1,6 @@
 # Vendor configuration interpretation — design note
 
-Status as of 2026-10-21: **the wire contract for interpretation snapshots exists** (version 1.0.0, under `contracts/interpretation/1.0.0/`, described in `contracts/interpretation/README.md`). No interpreter exists, and no product, version or export format is supported. The fixtures are synthetic.
+Status as of 2026-10-27: **the wire contract for interpretation snapshots exists** (versions 1.0.0 and 1.1.0, under `contracts/interpretation/1.0.0/` and `contracts/interpretation/1.1.0/`, described in `contracts/interpretation/README.md`; 1.1.0 adds read/write/event access on dependencies and an explicit state marker). No interpreter exists, and no product, version or export format is supported. The fixtures are synthetic.
 
 ## The decision
 
