@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 public final class IgnitionInterpreter {
 
     public static final String NAMESPACE = "ignition83";
-    public static final String RULE_VERSION = "1.1.0";
+    public static final String RULE_VERSION = "1.2.0";
     public static final List<String> RULES = List.of("identity", "node-kind", "effective-config", "dependencies",
             "references", "expression-state", "claims", "coverage", "remaining-config");
 
@@ -416,7 +416,11 @@ public final class IgnitionInterpreter {
                 Sub s = fill(v.asText(), outer);
                 if (s.status().equals("ok")) {
                     resolved = F.textNode(s.text());
-                    derived |= !s.text().equals(v.asText());
+                    if (!s.text().equals(v.asText())) {
+                        // §3 (1.2.0): substituted from the containing scope; the written text stays as .raw
+                        derived = true;
+                        claim(node, "parameters." + written + ".raw", v, valuePointer, p.own(), "claims");
+                    }
                 }
             } else {
                 resolved = v;
@@ -472,6 +476,11 @@ public final class IgnitionInterpreter {
                     unsupportedRef |= t.resolution().equals("unsupported");
                     depend(node, "expression", "input", "read", ref, t, "expression reference");
                 }
+                for (String unbraced : parsed.unbraced()) {
+                    // §5 (1.2.0): a path written without braces is kept as an unsupported reference on its text
+                    unsupportedRef = true;
+                    depend(node, "expression", "input", "read", unbraced, Target.unsupported(unbraced), "path written without braces");
+                }
                 Expressions.State st = Expressions.state(parsed);
                 if (unsupportedRef || !text.status().equals("ok")) {
                     // §6: an unsupported argument form, or a parameter without a value, makes the whole expression unknown
@@ -479,7 +488,9 @@ public final class IgnitionInterpreter {
                     issue("behavior-unknown", node, "expression", "the expression has an argument this profile cannot read");
                 } else if (st.state().equals("unknown")) {
                     unknownState(node);
-                    issue("behavior-unknown", node, "expression", "the expression calls a function this profile does not classify");
+                    issue("behavior-unknown", node, "expression", parsed.unknownSyntax()
+                            ? "the expression uses syntax this profile does not classify"
+                            : "the expression calls a function this profile does not classify");
                 } else {
                     operations.put(node.nodeId(), new OpState(node, st.state(), st.kinds(), c.props.get("expression").pointer()));
                 }
@@ -581,6 +592,8 @@ public final class IgnitionInterpreter {
                     if (ALARM_FIELDS.contains(k)) {
                         claim(node, k + ".raw", F.textNode(ref), ptr, p.own(), "claims");
                         claim(node, k + ".bindType", F.textNode(bt), ptr, p.own(), "claims");
+                    } else {
+                        unknown = true; // §9 (1.2.0): the dependency is kept, the property itself is unmodelled
                     }
                 } else if (bt.equalsIgnoreCase("parameter") && v.path("binding").isTextual() && ALARM_FIELDS.contains(k)) {
                     fieldClaim(node, k, new Prop(v, ptr, p.own()), scope);
@@ -1007,6 +1020,7 @@ public final class IgnitionInterpreter {
     record Sub(String text, String status) {}
 
     private static final Pattern PARAM = Pattern.compile("\\{([^{}\\[\\]]+)\\}");
+    private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_ ]*");
 
     /** A parameter binding: every {token} in it names a parameter, so an undeclared one is missing. */
     static Sub bind(String text, Map<String, Prop> scope) {
@@ -1023,12 +1037,16 @@ public final class IgnitionInterpreter {
         StringBuilder sb = new StringBuilder();
         String status = "ok";
         while (m.find()) {
-            Prop p = scope.get(m.group(1).trim().toLowerCase(Locale.ROOT));
+            String token = m.group(1).trim();
+            Prop p = scope.get(token.toLowerCase(Locale.ROOT));
             if (p != null && !p.value().isMissingNode()) {
                 m.appendReplacement(sb, Matcher.quoteReplacement(p.value().isTextual() ? p.value().asText() : p.value().toString()));
                 continue;
             }
             if (p != null) {
+                if (status.equals("ok")) status = "unresolvable";
+            } else if (binding && !IDENTIFIER.matcher(token).matches()) {
+                // §3: a token that is not a plain name (e.g. arithmetic on a parameter) is an unsupported binding form
                 if (status.equals("ok")) status = "unresolvable";
             } else if (binding) {
                 status = "missing";

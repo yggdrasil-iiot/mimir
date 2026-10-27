@@ -1,4 +1,4 @@
-# Ignition tag-export mapping specification 1.1.0
+# Ignition tag-export mapping specification 1.2.0
 
 ## Scope and evidence
 
@@ -235,3 +235,14 @@ These decisions settle cases the 1.0.0 text left open and apply to answer keys w
 4. (§4) Dependency rows apply to the active `valueSource` only. A memory or expression tag that still carries `opcServer` or `opcItemPath` keeps those as claims, but gets no OPC connection stub and no OPC edges.
 5. (§3) An empty-string `typeId` on a UDT type indicates that the type has no parent. It produces no edge and no unresolved item.
 6. (§7) Memory `value` and `defaultValue` are excluded from the projection only on memory tags, including tags whose `valueSource` is absent. On any other value source, they are properties outside the projection and get `unsupported`.
+
+## Amendments — 1.2.0 (2026-10-28)
+
+These decisions settle further cases left open and apply to answer keys written from now on; earlier keys are not changed.
+
+1. (§1 header / version) The specification version becomes 1.2.0.
+2. (§6) The stateless syntax row also lists the bitwise and shift operators `&`, `|`, `^`, `~`, `<<`, `>>`. Any operator symbol outside strings and references that is not one of the listed arithmetic, comparison, logical, bitwise or shift operators makes the expression's state `unknown`, with a `behavior-unknown` item.
+3. (§4, §9) An alarm property outside the §7 alarm projection that is bound to a tag (`bindType` Tag) keeps its dependency: an `input`/`read` edge from the alarm to the referenced tag. The alarm also gets an `unsupported` item, because the property itself is not modelled.
+4. (§5, §6) Path-shaped text written inside an expression without braces (for example a relative `[.]…` path used as a function argument) is recorded as an `input`/`read` edge with resolution `unsupported`, whose target is `@unparsed/<escaped original text>`, plus an `unsupported` item; the expression's state is `unknown`.
+5. (§3, §7) A nested UDT instance parameter whose value is plain text containing `{Param}` tokens of the containing scope is substituted from that scope. The substituted value is claimed as `parameters.<name>`, and the written text as `parameters.<name>.raw`.
+6. (§3 Gaps) A token in a parameter binding that is not a plain parameter name (for example arithmetic such as `{Index + 1}`) is an unsupported binding form: it gets `unsupported`, not `missing`, and the affected value is not asserted.

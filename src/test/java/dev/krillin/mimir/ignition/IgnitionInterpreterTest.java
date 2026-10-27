@@ -293,6 +293,57 @@ class IgnitionInterpreterTest {
         assertTrue(rows(export, "edges").contains("t | @unparsed/{instancename} | input | read | unsupported"), rows(export, "edges").toString());
     }
 
+    // ---- SPEC 1.2.0 amendments (decided 2026-10-27) ----
+
+    @Test
+    void bitwiseOperatorsAreStatelessButUnlistedSymbolsAreUnknown() {
+        assertEquals("stateless", Expressions.state(Expressions.parse("({[.]W} & 4) != 0 || ({[.]W} >> 2) = 1")).state());
+        assertEquals("unknown", Expressions.state(Expressions.parse("{[.]A} ? 1 : 0")).state());
+        assertEquals("unknown", Expressions.state(Expressions.parse("{[.]A} @ 2")).state());
+        assertEquals("stateless", Expressions.state(Expressions.parse("upper(\"a?b\") = '#'")).state());
+    }
+
+    @Test
+    void unbracedPathInAnExpressionIsAnUnsupportedReference() {
+        byte[] export = export("""
+                [{"name":"A","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4"},
+                 {"name":"L","tagType":"AtomicTag","valueSource":"expr","dataType":"Int4","expression":"len([.]*/A.Value)"}]""");
+        assertTrue(rows(export, "edges").contains("l | @unparsed/[.]*%2fa.value | input | read | unsupported"), rows(export, "edges").toString());
+        assertTrue(rows(export, "nodes").contains("l | operation | unknown | -"));
+        assertTrue(rows(export, "unresolved").contains("l | unsupported"));
+    }
+
+    @Test
+    void alarmBindingOutsideTheProjectionKeepsItsDependencyAndIsUnsupported() {
+        byte[] export = export("""
+                [{"name":"S","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4"},
+                 {"name":"T","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4",
+                  "alarms":[{"name":"Hi","mode":"AboveValue","Area":{"bindType":"Tag","value":"[.]S"}}]}]""");
+        assertTrue(rows(export, "edges").contains("t#alarm/hi | s | input | read | resolved"), rows(export, "edges").toString());
+        assertTrue(rows(export, "unresolved").contains("t#alarm/hi | unsupported"), rows(export, "unresolved").toString());
+    }
+
+    @Test
+    void plainParameterTextTakesTheContainingScopeAndKeepsItsRaw() {
+        byte[] export = export("""
+                [{"name":"_types_","tagType":"Folder","tags":[{"name":"O","tagType":"UdtType","parameters":{"Area":{"dataType":"String","value":"North"}},
+                   "tags":[{"name":"N","tagType":"UdtInstance","parameters":{"Path":{"dataType":"String","value":"{Area}/Pump"}}}]}]}]""");
+        Set<String> claims = rows(export, "claims");
+        assertTrue(claims.contains("_types_/o/n | parameters.Path | \"North/Pump\""), claims.toString());
+        assertTrue(claims.contains("_types_/o/n | parameters.Path.raw | \"{Area}/Pump\""), claims.toString());
+    }
+
+    @Test
+    void arithmeticInABindingTokenIsUnsupportedNotMissing() {
+        byte[] export = export("""
+                [{"name":"_types_","tagType":"Folder","tags":[{"name":"M","tagType":"UdtType","parameters":{"Index":{"dataType":"Integer","value":1}},
+                   "tags":[{"name":"P","tagType":"AtomicTag","valueSource":"opc","dataType":"Int4","opcServer":"U",
+                            "opcItemPath":{"bindType":"parameter","binding":"ns=1;s=D.R{Index + 1}"}}]}]}]""");
+        Set<String> u = rows(export, "unresolved");
+        assertTrue(u.contains("_types_/m/p | unsupported"), u.toString());
+        assertFalse(u.contains("_types_/m/p | missing"), u.toString());
+    }
+
     @Test
     void scoringCountsMissingAndExtraRows() {
         ObjectNode exp = M.createObjectNode();
