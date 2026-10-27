@@ -1,4 +1,4 @@
-# Ignition tag-export mapping specification 1.0.0
+# Ignition tag-export mapping specification 1.1.0
 
 ## Scope and evidence
 
@@ -224,3 +224,14 @@ For dev-1, with an export-only bundle and no supplied capture declaration, expec
 | Unknown properties | Produce `unsupported` at the owning element, except excluded memory values and recognized export bookkeeping. No silent semantic interpretation. |
 
 Unresolved items must identify their node, edge, or artifact location and affected nodes. Keep detailed fields/reasons in the snapshot. The answer-key projection coalesces them by logical owner and code as defined next.
+
+## Amendments — 1.1.0 (2026-10-27)
+
+These decisions settle cases the 1.0.0 text left open and apply to answer keys written from now on; keys written under 1.0.0 are not changed.
+
+1. (§1 header / version) The specification version becomes 1.1.0, and the earlier change that `inherits` edges carry `access: read` is incorporated into 1.1.0.
+2. (§3, §6) A UDT parameter declared with an explicit null value is not asserted, generating no `parameters.<name>` claim, and the element that declares it receives an `unsupported` item. It still counts as a declared parameter, so `{name}` is never read as a tag reference. An expression or derived getter/setter that uses it is claimed only as `<field>.raw`, and an expression using it has state `unknown` with a `behavior-unknown` item.
+3. (§7 Gaps, §9) A property outside the claim projection that names a gateway resource—such as `historyProvider` or a read/write permission property naming security levels or roles—gets both `external-required` and `unsupported`. A named resource inside the projection (`tagGroup`) keeps its claim and gets `external-required` only.
+4. (§4) Dependency rows apply to the active `valueSource` only. A memory or expression tag that still carries `opcServer` or `opcItemPath` keeps those as claims, but gets no OPC connection stub and no OPC edges.
+5. (§3) An empty-string `typeId` on a UDT type indicates that the type has no parent. It produces no edge and no unresolved item.
+6. (§7) Memory `value` and `defaultValue` are excluded from the projection only on memory tags, including tags whose `valueSource` is absent. On any other value source, they are properties outside the projection and get `unsupported`.

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.krillin.mimir.interpretation.ContractViolation;
@@ -32,7 +33,7 @@ import java.util.regex.Pattern;
 public final class IgnitionInterpreter {
 
     public static final String NAMESPACE = "ignition83";
-    public static final String RULE_VERSION = "1.0.0";
+    public static final String RULE_VERSION = "1.1.0";
     public static final List<String> RULES = List.of("identity", "node-kind", "effective-config", "dependencies",
             "references", "expression-state", "claims", "coverage", "remaining-config");
 
@@ -51,6 +52,8 @@ public final class IgnitionInterpreter {
     /** §9: bookkeeping and excluded memory values; anything else outside the projection is unsupported. */
     static final Set<String> ATOMIC_STRUCTURAL = Set.of("name", "tagType", "tags", "value", "defaultValue",
             "eventScripts", "alarms", "typeId", "parameters");
+    static final Set<String> ATOMIC_STRUCTURAL_NOT_MEMORY = Set.of("name", "tagType", "tags", "eventScripts", "alarms",
+            "typeId", "parameters");
     static final Set<String> GROUP_STRUCTURAL = Set.of("name", "tagType", "tags", "typeId", "parameters");
     /** §7 gaps: properties that name a resource kept elsewhere on the gateway. */
     static final Set<String> NAMED_RESOURCES = Set.of("tagGroup", "historyProvider");
@@ -378,32 +381,52 @@ public final class IgnitionInterpreter {
         for (Cfg m : c.members.values()) emit(m, append(path, m.name), node, scope, false);
     }
 
-    /** Effective parameter values of a UDT scope; values written as {Param} of the containing scope resolve there. */
+    /**
+     * Effective parameter values of a UDT scope (§3). A parameter declared without a usable value stays in scope
+     * as {@link #UNRESOLVED}: it is still a parameter, not a tag reference, but nothing that uses it is asserted.
+     * A value bound to a parameter of the containing scope is evaluated there.
+     */
     private Map<String, Prop> paramScope(Node node, Cfg c, Map<String, Prop> outer) {
         Map<String, Prop> scope = new LinkedHashMap<>();
         for (Map.Entry<String, Prop> e : c.params.entrySet()) {
             Prop p = e.getValue();
             JsonNode v = p.value().isObject() ? p.value().get("value") : p.value();
             String written = c.paramNames.getOrDefault(e.getKey(), e.getKey());
-            if (v == null || v.isNull() || v.isContainerNode()) {
-                if (v != null && v.isContainerNode()) issue("unsupported", node, "parameters." + written,
-                        "a parameter value in an unsupported form");
+            String valuePointer = p.pointer() + (p.value().isObject() ? "/value" : "");
+            JsonNode resolved = null;
+            boolean derived = !p.own();
+            if (v == null) {
+                resolved = null;
+            } else if (v.isNull()) {
+                if (p.own()) issue("unsupported", node, "parameters." + written, "an explicit null parameter value is not asserted");
+            } else if (isParameterBinding(v)) {
+                String binding = v.get("binding").asText();
+                Matcher whole = PARAM.matcher(binding.trim());
+                Prop single = whole.matches() ? outer.get(whole.group(1).trim().toLowerCase(Locale.ROOT)) : null;
+                if (single != null && !single.value().isMissingNode()) {
+                    resolved = single.value();
+                } else {
+                    Sub s = bind(binding, outer);
+                    if (s.status().equals("ok")) resolved = F.textNode(s.text());
+                }
+                derived = true;
+            } else if (v.isContainerNode()) {
+                issue("unsupported", node, "parameters." + written, "a parameter value in an unsupported form");
+            } else if (v.isTextual() && !outer.isEmpty()) {
+                Sub s = fill(v.asText(), outer);
+                if (s.status().equals("ok")) {
+                    resolved = F.textNode(s.text());
+                    derived |= !s.text().equals(v.asText());
+                }
+            } else {
+                resolved = v;
+            }
+            if (resolved == null) {
+                scope.put(e.getKey(), new Prop(UNRESOLVED, valuePointer, false));
                 continue;
             }
-            boolean derived = !p.own();
-            if (v.isTextual() && !outer.isEmpty()) {
-                String sub = substitute(v.asText(), outer);
-                if (sub == null) {
-                    issue("missing", node, "parameters." + written, "a parameter refers to an undeclared parameter");
-                    continue;
-                }
-                if (!sub.equals(v.asText())) {
-                    v = F.textNode(sub);
-                    derived = true;
-                }
-            }
-            JsonNode scalar = scalar(v);
-            scope.put(e.getKey(), new Prop(scalar, p.pointer() + (p.value().isObject() ? "/value" : ""), !derived));
+            JsonNode scalar = scalar(resolved);
+            scope.put(e.getKey(), new Prop(scalar, valuePointer, !derived));
             claim(node, "parameters." + written, scalar, p.pointer(), !derived, "effective-config");
         }
         return scope;
@@ -426,7 +449,8 @@ public final class IgnitionInterpreter {
             Prop p = c.props.get(f);
             if (p != null) fieldClaim(node, f, p, scope);
         }
-        unknownProps(node, c, ATOMIC_STRUCTURAL);
+        // §7: only a memory tag's value and defaultValue are excluded; on any other source they are unmodelled
+        unknownProps(node, c, vs == null || "memory".equals(vs) ? ATOMIC_STRUCTURAL : ATOMIC_STRUCTURAL_NOT_MEMORY);
 
         Prop ro = c.props.get("readOnly");
         String writeAccess = ro == null ? "write" : ro.value().isBoolean() ? (ro.value().asBoolean() ? null : "write") : "unknown";
@@ -434,19 +458,26 @@ public final class IgnitionInterpreter {
 
         List<String> folder = path.subList(0, path.size() - 1);
         if ("expr".equals(vs)) {
-            String text = textOf(c.props.get("expression"), scope);
+            Sub text = textOf(c.props.get("expression"), scope);
             if (text == null) {
                 issue("unsupported", node, "expression", "the expression is missing or in an unsupported form");
                 issue("behavior-unknown", node, "expression", "an expression that cannot be read is not classified");
                 unknownState(node);
             } else {
-                Expressions.Parsed parsed = Expressions.parse(text);
+                Expressions.Parsed parsed = Expressions.parse(text.text());
+                boolean unsupportedRef = false;
                 for (String ref : parsed.refs()) {
                     if (isParam(ref, scope)) continue;
-                    depend(node, "expression", "input", "read", ref, refTarget(ref, folder, false), "expression reference");
+                    Target t = refTarget(ref, folder, false);
+                    unsupportedRef |= t.resolution().equals("unsupported");
+                    depend(node, "expression", "input", "read", ref, t, "expression reference");
                 }
                 Expressions.State st = Expressions.state(parsed);
-                if (st.state().equals("unknown")) {
+                if (unsupportedRef || !text.status().equals("ok")) {
+                    // §6: an unsupported argument form, or a parameter without a value, makes the whole expression unknown
+                    unknownState(node);
+                    issue("behavior-unknown", node, "expression", "the expression has an argument this profile cannot read");
+                } else if (st.state().equals("unknown")) {
                     unknownState(node);
                     issue("behavior-unknown", node, "expression", "the expression calls a function this profile does not classify");
                 } else {
@@ -455,20 +486,21 @@ public final class IgnitionInterpreter {
             }
         } else if ("reference".equals(vs) || "derived".equals(vs)) {
             Prop src = c.props.get("sourceTagPath");
-            String text = textOf(src, scope);
-            if (text == null) {
+            Sub sub = textOf(src, scope);
+            if (sub == null) {
                 issue("unsupported", node, "sourceTagPath", "the source tag path is missing or in an unsupported form");
             } else {
-                Target t = pathTarget(text, folder);
+                String text = sub.text();
+                Target t = sub.status().equals("ok") ? pathTarget(text, folder) : Target.unsupported(text);
                 depend(node, "sourceTagPath", "reference", "read", text, t, vs + " tag source");
                 boolean setter = "reference".equals(vs) || c.props.containsKey("deriveExpressionSetter");
                 if (setter && writeAccess != null) depend(node, "sourceTagPath", "reference", writeAccess, text, t, vs + " tag writes through to its source");
             }
             if ("derived".equals(vs)) {
                 for (String f : List.of("deriveExpressionGetter", "deriveExpressionSetter")) {
-                    String expr = textOf(c.props.get(f), scope);
+                    Sub expr = textOf(c.props.get(f), scope);
                     if (expr == null) continue;
-                    for (String ref : Expressions.parse(expr).refs()) {
+                    for (String ref : Expressions.parse(expr.text()).refs()) {
                         if (ref.equalsIgnoreCase("source") || ref.equalsIgnoreCase("value") || isParam(ref, scope)) continue;
                         depend(node, f, "input", "read", ref, refTarget(ref, folder, false), "derived expression reference");
                     }
@@ -476,22 +508,22 @@ public final class IgnitionInterpreter {
             }
         } else if ("opc".equals(vs)) {
             Prop server = c.props.get("opcServer");
-            if (server != null && server.value().isTextual()) {
-                Node conn = connection("opc", server.value().asText(), server.pointer());
-                depend(node, "opcServer", "external", "read", server.value().asText(), Target.external(conn.locator()), "OPC tag reads its server");
-                if (writeAccess != null) depend(node, "opcServer", "external", writeAccess, server.value().asText(), Target.external(conn.locator()), "OPC tag writes to its server");
-            } else {
+            Target t = resourceTarget("opc", server, scope);
+            if (t == null) {
                 issue("unsupported", node, "opcServer", "an OPC tag without a server name");
+            } else {
+                depend(node, "opcServer", "external", "read", t.canonical(), t, "OPC tag reads its server");
+                if (writeAccess != null) depend(node, "opcServer", "external", writeAccess, t.canonical(), t, "OPC tag writes to its server");
             }
         } else if ("db".equals(vs)) {
             Prop ds = c.props.get("datasource");
-            if (ds != null && ds.value().isTextual()) {
-                Node conn = connection("db", ds.value().asText(), ds.pointer());
+            Target t = resourceTarget("db", ds, scope);
+            if (t == null) {
+                issue("unsupported", node, "datasource", "a query tag without a datasource name");
+            } else {
                 Prop qt = c.props.get("queryType");
                 String access = qt != null && qt.value().asText("").equalsIgnoreCase("select") ? "read" : "unknown";
-                depend(node, "datasource", "external", access, ds.value().asText(), Target.external(conn.locator()), "query tag uses its datasource");
-            } else {
-                issue("unsupported", node, "datasource", "a query tag without a datasource name");
+                depend(node, "datasource", "external", access, t.canonical(), t, "query tag uses its datasource");
             }
             issue("behavior-unknown", node, "query", "SQL is never run; what it returns is not known");
         }
@@ -513,7 +545,10 @@ public final class IgnitionInterpreter {
             String access = SCRIPT_WRITES.contains(fn) ? "write" : "read";
             List<String> literals = literalArgument(script, m.end());
             if (literals == null) {
-                issue("unsupported", node, "script", "system.tag." + m.group(1) + " with a target that is not a literal");
+                // §4 gaps: a dynamic target is kept as an unsupported dependency on its original argument text
+                String arg = firstArgument(script, m.end());
+                depend(node, "script", "reference", access, arg, Target.unsupported(arg),
+                        "system.tag." + m.group(1) + " with a target that is not a literal");
                 continue;
             }
             for (String target : literals) {
@@ -574,12 +609,14 @@ public final class IgnitionInterpreter {
             if (binding != null && binding.isTextual()) claim(node, field + ".raw", binding, p.pointer(), observed, "claims");
             claim(node, field + ".bindType", F.textNode(bt), p.pointer(), observed, "claims");
             if (bt.equalsIgnoreCase("parameter") && binding != null && binding.isTextual()) {
-                String resolved = substitute(binding.asText(), scope);
-                if (resolved == null) {
+                Sub resolved = bind(binding.asText(), scope);
+                if (resolved.status().equals("missing")) {
                     issue("missing", node, field, "the binding names a parameter that is not declared");
+                } else if (resolved.status().equals("unresolvable")) {
+                    issue("unsupported", node, field, "the binding names a parameter that has no usable value");
                 } else {
                     String resolvedField = field.equals("opcItemPath") ? "opcItemPath.resolved" : field;
-                    claim(node, resolvedField, F.textNode(resolved), p.pointer(), false, "effective-config");
+                    claim(node, resolvedField, F.textNode(resolved.text()), p.pointer(), false, "effective-config");
                 }
             } else {
                 issue("unsupported", node, field, "a property bound by '" + bt + "' is not interpreted");
@@ -594,11 +631,15 @@ public final class IgnitionInterpreter {
             claim(node, "opcItemPath.raw", scalar(v), p.pointer(), observed, "claims");
             return;
         }
-        if (v.isTextual() && (field.equals("expression") || field.equals("documentation")) && !scope.isEmpty()) {
-            String sub = substitute(v.asText(), scope);
-            if (sub != null && !sub.equals(v.asText())) {
+        if (v.isTextual() && PARAMETER_TEXT_FIELDS.contains(field) && !scope.isEmpty()) {
+            Sub sub = fill(v.asText(), scope);
+            if (!sub.status().equals("ok")) {
+                claim(node, field + ".raw", v, p.pointer(), observed, "claims"); // §3: the affected value is not asserted
+                return;
+            }
+            if (!sub.text().equals(v.asText())) {
                 claim(node, field + ".raw", v, p.pointer(), observed, "claims");
-                claim(node, field, F.textNode(sub), p.pointer(), false, "effective-config");
+                claim(node, field, F.textNode(sub.text()), p.pointer(), false, "effective-config");
                 return;
             }
         }
@@ -607,14 +648,15 @@ public final class IgnitionInterpreter {
     }
 
     private void unknownProps(Node node, Cfg c, Set<String> structural) {
+        boolean atomic = structural != GROUP_STRUCTURAL;
         for (Map.Entry<String, Prop> e : c.props.entrySet()) {
             String k = e.getKey();
-            if (structural.contains(k) || (structural == ATOMIC_STRUCTURAL && ATOMIC_FIELDS.contains(k))) continue;
-            if (NAMED_RESOURCES.contains(k)) {
+            if (structural.contains(k) || (atomic && ATOMIC_FIELDS.contains(k))) continue;
+            if (NAMED_RESOURCES.contains(k) || k.toLowerCase(Locale.ROOT).contains("permission")) {
+                // decided 2026-10-27: a named gateway resource outside the projection gets both codes
                 issue("external-required", node, k, "names a resource kept on the gateway");
-            } else {
-                issue("unsupported", node, k, "property outside this profile's projection");
             }
+            issue("unsupported", node, k, "property outside this profile's projection");
         }
     }
 
@@ -719,7 +761,7 @@ public final class IgnitionInterpreter {
     private Target refTarget(String ref, List<String> folder, boolean pathValued) {
         if (ref.startsWith("[")) return pathTarget(ref, folder);
         if (pathValued) return pathTarget(ref, folder);
-        return Target.unsupported(ref);
+        return Target.unsupported("{" + ref + "}"); // KEY-FORMAT: the escaped original text, braces included
     }
 
     /** A path-valued property: bracketed as in expressions, or provider-relative when unqualified (§5). */
@@ -931,40 +973,95 @@ public final class IgnitionInterpreter {
         return scope.containsKey(ref.toLowerCase(Locale.ROOT));
     }
 
-    /** The text of a property, with declared {Param} tokens resolved; null when it is not plain text or a parameter binding. */
-    private String textOf(Prop p, Map<String, Prop> scope) {
+    /**
+     * The text of a property with declared {Param} tokens put in; null when it is neither plain text nor a parameter
+     * binding. Status {@code ok}, {@code missing} (a binding names an undeclared parameter) or {@code unresolvable}
+     * (a declared parameter has no usable value); when not ok the text keeps the tokens.
+     */
+    private Sub textOf(Prop p, Map<String, Prop> scope) {
         if (p == null) return null;
         JsonNode v = p.value();
-        if (v.isObject() && v.path("bindType").asText("").equalsIgnoreCase("parameter") && v.path("binding").isTextual()) {
-            return substitute(v.get("binding").asText(), scope);
-        }
+        if (isParameterBinding(v)) return bind(v.get("binding").asText(), scope);
         if (!v.isTextual()) return null;
-        String sub = substitute(v.asText(), scope);
-        return sub == null ? v.asText() : sub;
+        return fill(v.asText(), scope);
     }
+
+    /** §4: the external resource a property names, as a connection stub, or unsupported when its binding cannot be read. */
+    private Target resourceTarget(String kind, Prop p, Map<String, Prop> scope) {
+        if (p == null) return null;
+        Sub s = textOf(p, scope);
+        if (s == null) return null;
+        if (!s.status().equals("ok")) return Target.unsupported(s.text());
+        return Target.external(connection(kind, s.text(), p.pointer()).locator());
+    }
+
+    static boolean isParameterBinding(JsonNode v) {
+        return v != null && v.isObject() && v.path("bindType").asText("").equalsIgnoreCase("parameter") && v.path("binding").isTextual();
+    }
+
+    /** A parameter declared in scope without a usable value (§3). */
+    static final JsonNode UNRESOLVED = MissingNode.getInstance();
+    /** Fields whose text may carry {Param} tokens; when substituted they are claimed as field.raw and field (§7). */
+    static final Set<String> PARAMETER_TEXT_FIELDS = Set.of("expression", "documentation", "deriveExpressionGetter", "deriveExpressionSetter");
+
+    record Sub(String text, String status) {}
 
     private static final Pattern PARAM = Pattern.compile("\\{([^{}\\[\\]]+)\\}");
 
-    /** Replaces {Param} tokens declared in scope; null when a token that looks like a parameter is not declared. */
-    static String substitute(String text, Map<String, Prop> scope) {
+    /** A parameter binding: every {token} in it names a parameter, so an undeclared one is missing. */
+    static Sub bind(String text, Map<String, Prop> scope) {
+        return put(text, scope, true);
+    }
+
+    /** Expression-like text: only declared parameter tokens are put in; other braces are tag references. */
+    static Sub fill(String text, Map<String, Prop> scope) {
+        return put(text, scope, false);
+    }
+
+    private static Sub put(String text, Map<String, Prop> scope, boolean binding) {
         Matcher m = PARAM.matcher(text);
         StringBuilder sb = new StringBuilder();
-        boolean missing = false;
+        String status = "ok";
         while (m.find()) {
-            String name = m.group(1).trim();
-            Prop p = scope.get(name.toLowerCase(Locale.ROOT));
-            if (p != null) {
+            Prop p = scope.get(m.group(1).trim().toLowerCase(Locale.ROOT));
+            if (p != null && !p.value().isMissingNode()) {
                 m.appendReplacement(sb, Matcher.quoteReplacement(p.value().isTextual() ? p.value().asText() : p.value().toString()));
-            } else {
-                if (!name.contains("/") && !name.contains(".") && !scope.isEmpty() && name.matches("[A-Za-z_][A-Za-z0-9_ ]*")
-                        && !name.equalsIgnoreCase("source") && !name.equalsIgnoreCase("value")) {
-                    missing = true;
-                }
-                m.appendReplacement(sb, Matcher.quoteReplacement(m.group(0)));
+                continue;
             }
+            if (p != null) {
+                if (status.equals("ok")) status = "unresolvable";
+            } else if (binding) {
+                status = "missing";
+            }
+            m.appendReplacement(sb, Matcher.quoteReplacement(m.group(0)));
         }
         m.appendTail(sb);
-        return missing ? null : sb.toString();
+        return new Sub(status.equals("ok") ? sb.toString() : text, status);
+    }
+
+    /** The trimmed text of the argument that starts at {@code from}, up to its top-level comma or closing paren. */
+    static String firstArgument(String s, int from) {
+        int depth = 0;
+        char quote = 0;
+        int i = from;
+        for (; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (quote != 0) {
+                if (c == '\\') i++;
+                else if (c == quote) quote = 0;
+            } else if (c == '"' || c == '\'') {
+                quote = c;
+            } else if (c == '(' || c == '[' || c == '{') {
+                depth++;
+            } else if (c == ')' || c == ']' || c == '}') {
+                if (depth == 0) break;
+                depth--;
+            } else if (c == ',' && depth == 0) {
+                break;
+            }
+        }
+        String arg = s.substring(from, i).trim();
+        return arg.isEmpty() ? "?" : arg;
     }
 
     /** §7 / KEY-FORMAT: numbers become integers when integral, otherwise canonical decimal strings. */

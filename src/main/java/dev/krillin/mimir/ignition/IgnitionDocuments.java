@@ -17,7 +17,7 @@ import java.io.UncheckedIOException;
 public final class IgnitionDocuments {
 
     public static final String ARTIFACT_ID = "export";
-    public static final String INTERPRETER_VERSION = "0.1.0";
+    public static final String INTERPRETER_VERSION = "0.2.0";
     private static final JsonNodeFactory F = JsonNodeFactory.instance;
 
     public record Set(ObjectNode bundle, ObjectNode profile, ObjectNode snapshot) {}

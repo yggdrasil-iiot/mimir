@@ -46,6 +46,9 @@ final class Expressions {
                 }
                 refs.add(text.substring(i + 1, end).trim());
                 i = end + 1;
+            } else if (c == '[') {
+                malformed = true; // subscript syntax ({a}[{i}]) is not in this profile's table (§6)
+                i++;
             } else if (Character.isLetter(c) || c == '_') {
                 int end = i;
                 while (end < n && (Character.isLetterOrDigit(text.charAt(end)) || text.charAt(end) == '_' || text.charAt(end) == '.')) end++;

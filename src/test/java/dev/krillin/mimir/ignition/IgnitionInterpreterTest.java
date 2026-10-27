@@ -197,6 +197,102 @@ class IgnitionInterpreterTest {
         assertTrue(IgnitionInterpreter.scalar(M.getNodeFactory().numberNode(new java.math.BigDecimal("1500.0"))).isIntegralNumber());
     }
 
+    // ---- round-1 gaps, fixed against SPEC rules (types named generically by the reviewer) ----
+
+    static final String MOTOR_TYPE = """
+            {"name":"_types_","tagType":"Folder","tags":[
+              {"name":"Inner","tagType":"UdtType",
+               "tags":[{"name":"P","tagType":"AtomicTag","valueSource":"opc","dataType":"Float8",
+                        "opcServer":{"bindType":"parameter","binding":"{Srv}"},
+                        "opcItemPath":{"bindType":"parameter","binding":"[{Dev}]P"}}],
+               "parameters":{"Dev":{"dataType":"String","value":"X"},"Srv":{"dataType":"String","value":"Ignition OPC UA Server"}}},
+              {"name":"Outer","tagType":"UdtType","parameters":{"Line":{"dataType":"String","value":"L1"}},
+               "tags":[{"name":"In","tagType":"UdtInstance","typeId":"Inner",
+                        "parameters":{"Dev":{"dataType":"String","value":{"bindType":"parameter","binding":"{Line}"}},
+                                      "Tag":{"dataType":"String","value":{"bindType":"parameter","binding":"{Line}_A"}}}}]}]}""";
+
+    @Test
+    void parameterBoundServerAndNestedBindingResolveThroughScopes() {
+        byte[] export = export("[" + MOTOR_TYPE + ",{\"name\":\"O\",\"tagType\":\"UdtInstance\",\"typeId\":\"Outer\","
+                + "\"parameters\":{\"Line\":{\"dataType\":\"String\",\"value\":\"L7\"}}}]");
+        Set<String> edges = rows(export, "edges");
+        assertTrue(edges.contains("o/in/p | @external/opc/Ignition OPC UA Server | external | read | external-required"), edges.toString());
+        Set<String> claims = rows(export, "claims");
+        assertTrue(claims.contains("o/in/p | opcItemPath.resolved | \"[L7]P\""), claims.toString());
+        assertTrue(claims.contains("o/in | parameters.Dev | \"L7\""), claims.toString());
+        assertTrue(claims.contains("o/in | parameters.Tag | \"L7_A\""), claims.toString());
+        assertFalse(rows(export, "unresolved").contains("o/in/p | missing"));
+    }
+
+    @Test
+    void derivedExpressionsTakeTheirParameters() {
+        byte[] export = export("""
+                [{"name":"_types_","tagType":"Folder","tags":[{"name":"D","tagType":"UdtType","parameters":{"K":{"dataType":"Integer","value":10}},
+                   "tags":[{"name":"S","tagType":"AtomicTag","valueSource":"memory","dataType":"Float8"},
+                           {"name":"V","tagType":"AtomicTag","valueSource":"derived","dataType":"Float8","sourceTagPath":"[.]S",
+                            "deriveExpressionGetter":"{source} * {K}","deriveExpressionSetter":"{value} / {K}"}]}]}]""");
+        Set<String> claims = rows(export, "claims");
+        assertTrue(claims.contains("_types_/d/v | deriveExpressionGetter | \"{source} * 10\""), claims.toString());
+        assertTrue(claims.contains("_types_/d/v | deriveExpressionSetter.raw | \"{value} / {K}\""), claims.toString());
+    }
+
+    @Test
+    void dynamicScriptTargetIsAnUnsupportedDependencyOnItsArgumentText() {
+        byte[] export = export("""
+                [{"name":"B","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4","eventScripts":[{"eventid":"valueChanged",
+                   "script":"\\tp = '[.]A'\\n\\tsystem.tag.writeBlocking([p], [1])"}]}]""");
+        assertTrue(rows(export, "edges").contains("b#event/valuechanged | @unparsed/[p] | reference | write | unsupported"),
+                rows(export, "edges").toString());
+    }
+
+    @Test
+    void nullParameterIsWithheldAndItsExpressionIsUnknown() {
+        byte[] export = export("""
+                [{"name":"_types_","tagType":"Folder","tags":[{"name":"N","tagType":"UdtType","parameters":{"Q":{"dataType":"String","value":null}},
+                   "tags":[{"name":"E","tagType":"AtomicTag","valueSource":"expr","dataType":"Int4","expression":"len({Q})"}]}]}]""");
+        Set<String> claims = rows(export, "claims");
+        assertFalse(claims.stream().anyMatch(c -> c.contains("parameters.Q")), claims.toString());
+        assertTrue(claims.contains("_types_/n/e | expression.raw | \"len({Q})\""), claims.toString());
+        assertFalse(claims.stream().anyMatch(c -> c.startsWith("_types_/n/e | expression |")), claims.toString());
+        assertTrue(rows(export, "nodes").contains("_types_/n/e | operation | unknown | -"));
+        assertTrue(rows(export, "unresolved").contains("_types_/n | unsupported"));
+        assertFalse(rows(export, "edges").stream().anyMatch(e -> e.contains("@unparsed")), rows(export, "edges").toString());
+    }
+
+    @Test
+    void namedResourcesGetBothCodesAndNonMemoryValueIsUnmodelled() {
+        byte[] export = export("""
+                [{"name":"H","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4","value":3,"historyProvider":"Hist"},
+                 {"name":"W","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4","writePermissions":{"type":"AllOf"}},
+                 {"name":"X","tagType":"AtomicTag","valueSource":"expr","dataType":"Int4","expression":"1","value":3}]""");
+        Set<String> u = rows(export, "unresolved");
+        assertTrue(u.contains("h | external-required") && u.contains("h | unsupported"), u.toString());
+        assertTrue(u.contains("w | external-required") && u.contains("w | unsupported"), u.toString());
+        assertTrue(u.contains("x | unsupported"), u.toString());
+    }
+
+    @Test
+    void unresolvableDatasourceBindingIsUnsupportedNotAsserted() {
+        byte[] export = export("""
+                [{"name":"_types_","tagType":"Folder","tags":[{"name":"Q","tagType":"UdtType",
+                   "parameters":{"DS":{"dataType":"String","value":{"bindType":"parameter","binding":"{Up}"}}},
+                   "tags":[{"name":"T","tagType":"AtomicTag","valueSource":"db","dataType":"String","queryType":"Select",
+                            "datasource":{"bindType":"parameter","binding":"{DS}"},"query":"SELECT 1"}]}]}]""");
+        assertTrue(rows(export, "edges").contains("_types_/q/t | @unparsed/{ds} | external | read | unsupported"), rows(export, "edges").toString());
+        assertFalse(rows(export, "claims").stream().anyMatch(c -> c.startsWith("_types_/q/t | datasource |")), rows(export, "claims").toString());
+    }
+
+    @Test
+    void bareUndeclaredTokenAndSubscriptMakeTheExpressionUnknown() {
+        byte[] export = export("""
+                [{"name":"A","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4"},
+                 {"name":"T","tagType":"AtomicTag","valueSource":"expr","dataType":"String","expression":"{InstanceName}"},
+                 {"name":"S","tagType":"AtomicTag","valueSource":"expr","dataType":"Int4","expression":"{[.]A}[{[.]A}]"}]""");
+        Set<String> n = rows(export, "nodes");
+        assertTrue(n.contains("t | operation | unknown | -") && n.contains("s | operation | unknown | -"), n.toString());
+        assertTrue(rows(export, "edges").contains("t | @unparsed/{instancename} | input | read | unsupported"), rows(export, "edges").toString());
+    }
+
     @Test
     void scoringCountsMissingAndExtraRows() {
         ObjectNode exp = M.createObjectNode();
