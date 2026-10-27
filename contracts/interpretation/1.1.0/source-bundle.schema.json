@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:mimir:interpretation:1.1.0:source-bundle.schema.json",
+  "title": "SourceBundle — the files handed over, pinned, never modified",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "source-bundle" },
+    "contractVersion": { "const": "1.1.0" },
+    "id": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+    "version": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/version" },
+    "body": {
+      "type": "object",
+      "properties": {
+        "origin": { "enum": ["synthetic", "field-declared"] },
+        "captureScope": { "enum": ["unknown", "partial", "declared-complete"] },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "properties": {
+              "artifactId": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+              "path": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/path" },
+              "sha256": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/sha256" },
+              "sizeBytes": { "type": "integer", "minimum": 0 },
+              "role": { "enum": ["configuration", "backup", "supporting-document", "screen-capture", "redacted-copy"] },
+              "obtained": {
+                "type": "object",
+                "properties": {
+                  "at": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/timestamp" },
+                  "method": { "enum": ["handed-over", "export", "backup-copy", "screen-capture"] }
+                },
+                "required": ["at", "method"],
+                "additionalProperties": false
+              },
+              "redaction": {
+                "type": "object",
+                "properties": {
+                  "derivedFrom": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+                  "removedFields": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" }
+                  }
+                },
+                "required": ["derivedFrom", "removedFields"],
+                "additionalProperties": false
+              }
+            },
+            "required": ["artifactId", "path", "sha256", "sizeBytes", "role", "obtained"],
+            "additionalProperties": false,
+            "if": { "properties": { "role": { "const": "redacted-copy" } } },
+            "then": { "required": ["redaction"] },
+            "else": { "not": { "required": ["redaction"] } }
+          }
+        },
+        "productClaims": {
+          "description": "What the provider or the files say the product is. A claim, not a verified fact.",
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "properties": {
+              "subject": { "enum": ["product", "version", "driver", "format"] },
+              "value": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" },
+              "basis": { "enum": ["stated-by-provider", "observed-in-artifact", "unknown"] },
+              "artifactIds": {
+                "type": "array",
+                "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" }
+              }
+            },
+            "required": ["subject", "value", "basis"],
+            "additionalProperties": false,
+            "if": { "properties": { "basis": { "const": "observed-in-artifact" } } },
+            "then": { "required": ["artifactIds"], "properties": { "artifactIds": { "minItems": 1 } } }
+          }
+        }
+      },
+      "required": ["origin", "captureScope", "artifacts", "productClaims"],
+      "additionalProperties": false
+    },
+    "digest": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/sha256" },
+    "envelope": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/envelope" }
+  },
+  "required": ["kind", "contractVersion", "id", "version", "body", "digest"],
+  "additionalProperties": false
+}

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:mimir:interpretation:1.1.0:interpretation-profile.schema.json",
+  "title": "InterpretationProfile — which interpreter, which product range, which rules, which limits",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "interpretation-profile" },
+    "contractVersion": { "const": "1.1.0" },
+    "id": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+    "version": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/version" },
+    "body": {
+      "type": "object",
+      "properties": {
+        "interpreter": {
+          "type": "object",
+          "properties": {
+            "name": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+            "version": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/version" },
+            "implementationDigest": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/sha256" }
+          },
+          "required": ["name", "version", "implementationDigest"],
+          "additionalProperties": false
+        },
+        "supports": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "product": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" },
+              "versions": { "type": "array", "minItems": 1, "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" } },
+              "drivers": { "type": "array", "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" } },
+              "inputFormats": { "type": "array", "minItems": 1, "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" } },
+              "patterns": { "type": "array", "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" } }
+            },
+            "required": ["product", "versions", "inputFormats"],
+            "additionalProperties": false
+          }
+        },
+        "unknownVersionPolicy": {
+          "description": "A product version outside `supports` is refused, never handled by the newest rules.",
+          "const": "reject"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ruleId": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+              "version": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/version" },
+              "summary": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" }
+            },
+            "required": ["ruleId", "version"],
+            "additionalProperties": false
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "maxArtifacts": { "type": "integer", "minimum": 1 },
+            "maxTotalBytes": { "type": "integer", "minimum": 1 },
+            "maxReferenceDepth": { "type": "integer", "minimum": 1 },
+            "maxNodes": { "type": "integer", "minimum": 1 }
+          },
+          "required": ["maxArtifacts", "maxTotalBytes", "maxReferenceDepth", "maxNodes"],
+          "additionalProperties": false
+        },
+        "knownGaps": {
+          "type": "array",
+          "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" }
+        }
+      },
+      "required": ["interpreter", "supports", "unknownVersionPolicy", "rules", "limits", "knownGaps"],
+      "additionalProperties": false
+    },
+    "digest": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/sha256" },
+    "envelope": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/envelope" }
+  },
+  "required": ["kind", "contractVersion", "id", "version", "body", "digest"],
+  "additionalProperties": false
+}

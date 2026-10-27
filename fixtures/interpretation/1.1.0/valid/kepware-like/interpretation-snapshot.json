@@ -1,0 +1,367 @@
+{
+  "kind": "interpretation-snapshot",
+  "contractVersion": "1.1.0",
+  "id": "synthetic/kepware-like/snapshot",
+  "version": "1.0.0",
+  "body": {
+    "bundleRef": {
+      "kind": "source-bundle",
+      "id": "synthetic/kepware-like/bundle",
+      "version": "1.0.0",
+      "digest": "e7d21bcd878238ea9c3195ba6000ed8c02d3ed16093158a484c20fc87644ec33"
+    },
+    "profileRef": {
+      "kind": "interpretation-profile",
+      "id": "synthetic/kepware-like/profile",
+      "version": "1.0.0",
+      "digest": "c976bb135f85ccaa4a7ae9c7b9449978ec86f9bafe2149b81e4b6e2fa4d0b871"
+    },
+    "inputManifest": [
+      {
+        "artifactId": "project",
+        "sha256": "30875cea43c793ec9d43194c7d9c32c72413531f55d13c122eba8f9084a6ca18"
+      }
+    ],
+    "context": [],
+    "nativeNodes": [
+      {
+        "nodeId": "n.ch1",
+        "namespace": "synthetic-kepware-like",
+        "nativeId": "Ch1",
+        "kind": "connection",
+        "locator": {
+          "artifactId": "project",
+          "at": {
+            "kind": "json-pointer",
+            "pointer": "/channels/0"
+          }
+        }
+      },
+      {
+        "nodeId": "n.ch1.dev1",
+        "namespace": "synthetic-kepware-like",
+        "nativeId": "Ch1.Dev1",
+        "nativePath": [
+          "Ch1",
+          "Dev1"
+        ],
+        "kind": "group",
+        "locator": {
+          "artifactId": "project",
+          "at": {
+            "kind": "json-pointer",
+            "pointer": "/channels/0/devices/0"
+          }
+        }
+      },
+      {
+        "nodeId": "n.ch1.dev1.speed",
+        "namespace": "synthetic-kepware-like",
+        "nativeId": "Ch1.Dev1.Speed",
+        "nativePath": [
+          "Ch1",
+          "Dev1",
+          "Speed"
+        ],
+        "kind": "tag",
+        "locator": {
+          "artifactId": "project",
+          "at": {
+            "kind": "json-pointer",
+            "pointer": "/channels/0/devices/0/tags/0"
+          }
+        },
+        "state": "stateless",
+        "stateClaimId": "c.speed-state"
+      },
+      {
+        "nodeId": "n.ch1.dev1.alias",
+        "namespace": "synthetic-kepware-like",
+        "nativeId": "Ch1.Dev1.Alias",
+        "nativePath": [
+          "Ch1",
+          "Dev1",
+          "Alias"
+        ],
+        "kind": "tag",
+        "locator": {
+          "artifactId": "project",
+          "at": {
+            "kind": "json-pointer",
+            "pointer": "/channels/0/devices/0/tags/1"
+          }
+        }
+      },
+      {
+        "nodeId": "n.ch1.dev1.pick",
+        "namespace": "synthetic-kepware-like",
+        "nativeId": "Ch1.Dev1.Pick",
+        "nativePath": [
+          "Ch1",
+          "Dev1",
+          "Pick"
+        ],
+        "kind": "tag",
+        "locator": {
+          "artifactId": "project",
+          "at": {
+            "kind": "json-pointer",
+            "pointer": "/channels/0/devices/0/tags/2"
+          }
+        }
+      },
+      {
+        "nodeId": "n.ch1.dev3",
+        "namespace": "synthetic-kepware-like",
+        "nativeId": "Ch1.Dev3",
+        "nativePath": [
+          "Ch1",
+          "Dev3"
+        ],
+        "kind": "group",
+        "locator": {
+          "artifactId": "project",
+          "at": {
+            "kind": "json-pointer",
+            "pointer": "/channels/0/devices/1"
+          }
+        }
+      },
+      {
+        "nodeId": "n.ch1.dev3.speed",
+        "namespace": "synthetic-kepware-like",
+        "nativeId": "Ch1.Dev3.Speed",
+        "nativePath": [
+          "Ch1",
+          "Dev3",
+          "Speed"
+        ],
+        "kind": "tag",
+        "locator": {
+          "artifactId": "project",
+          "at": {
+            "kind": "json-pointer",
+            "pointer": "/channels/0/devices/1/tags/0"
+          }
+        }
+      }
+    ],
+    "referenceEdges": [
+      {
+        "edgeId": "e.ch1-dev1",
+        "owner": {
+          "nodeId": "n.ch1",
+          "field": "devices"
+        },
+        "relation": "contains",
+        "targetText": "Dev1",
+        "resolution": "resolved",
+        "targetNodeId": "n.ch1.dev1",
+        "basis": "nesting in the project structure"
+      },
+      {
+        "edgeId": "e.ch1-dev3",
+        "owner": {
+          "nodeId": "n.ch1",
+          "field": "devices"
+        },
+        "relation": "contains",
+        "targetText": "Dev3",
+        "resolution": "resolved",
+        "targetNodeId": "n.ch1.dev3",
+        "basis": "nesting in the project structure"
+      },
+      {
+        "edgeId": "e.alias-ref",
+        "owner": {
+          "nodeId": "n.ch1.dev1.alias",
+          "field": "ref"
+        },
+        "relation": "reference",
+        "targetText": "Ch1.Dev2.Speed",
+        "resolution": "missing",
+        "basis": "no device Dev2 under Ch1 in the artifact",
+        "access": "read"
+      },
+      {
+        "edgeId": "e.pick-ref",
+        "owner": {
+          "nodeId": "n.ch1.dev1.pick",
+          "field": "ref"
+        },
+        "relation": "reference",
+        "targetText": "Speed",
+        "resolution": "ambiguous",
+        "candidates": [
+          "n.ch1.dev1.speed",
+          "n.ch1.dev3.speed"
+        ],
+        "basis": "a bare name matches two tags; the interpreter does not choose by position or by name alone",
+        "access": "unknown"
+      }
+    ],
+    "claims": [
+      {
+        "claimId": "c.speed-address",
+        "subject": {
+          "nodeId": "n.ch1.dev1.speed",
+          "field": "address"
+        },
+        "value": "40001",
+        "evidenceBasis": "observed-in-artifact",
+        "status": "asserted",
+        "locators": [
+          {
+            "artifactId": "project",
+            "at": {
+              "kind": "json-pointer",
+              "pointer": "/channels/0/devices/0/tags/0/address"
+            }
+          }
+        ]
+      },
+      {
+        "claimId": "c.speed-raw-high",
+        "subject": {
+          "nodeId": "n.ch1.dev1.speed",
+          "field": "scaling.rawHigh"
+        },
+        "value": 1000,
+        "evidenceBasis": "observed-in-artifact",
+        "status": "asserted",
+        "locators": [
+          {
+            "artifactId": "project",
+            "at": {
+              "kind": "json-pointer",
+              "pointer": "/channels/0/devices/0/tags/0/scaling/rawHigh"
+            }
+          }
+        ]
+      },
+      {
+        "claimId": "c.speed-eng-high",
+        "subject": {
+          "nodeId": "n.ch1.dev1.speed",
+          "field": "scaling.engHigh"
+        },
+        "value": 100,
+        "evidenceBasis": "observed-in-artifact",
+        "status": "asserted",
+        "locators": [
+          {
+            "artifactId": "project",
+            "at": {
+              "kind": "json-pointer",
+              "pointer": "/channels/0/devices/0/tags/0/scaling/engHigh"
+            }
+          }
+        ]
+      },
+      {
+        "claimId": "c.speed-engineering",
+        "subject": {
+          "nodeId": "n.ch1.dev1.speed",
+          "field": "engineeringValue"
+        },
+        "value": "raw * 100 / 1000",
+        "evidenceBasis": "derived-by-rule",
+        "status": "asserted",
+        "rule": {
+          "ruleId": "synthetic-kepware-like.linear-scaling",
+          "version": "1.0.0"
+        },
+        "locators": [
+          {
+            "artifactId": "project",
+            "at": {
+              "kind": "json-pointer",
+              "pointer": "/channels/0/devices/0/tags/0/scaling"
+            }
+          }
+        ],
+        "dependsOn": {
+          "claimIds": [
+            "c.speed-raw-high",
+            "c.speed-eng-high"
+          ]
+        }
+      },
+      {
+        "claimId": "c.dev3-speed-address",
+        "subject": {
+          "nodeId": "n.ch1.dev3.speed",
+          "field": "address"
+        },
+        "value": "40011",
+        "evidenceBasis": "observed-in-artifact",
+        "status": "asserted",
+        "locators": [
+          {
+            "artifactId": "project",
+            "at": {
+              "kind": "json-pointer",
+              "pointer": "/channels/0/devices/1/tags/0/address"
+            }
+          }
+        ]
+      },
+      {
+        "claimId": "c.speed-state",
+        "subject": {
+          "nodeId": "n.ch1.dev1.speed",
+          "field": "state"
+        },
+        "value": "stateless",
+        "evidenceBasis": "derived-by-rule",
+        "status": "asserted",
+        "rule": {
+          "ruleId": "synthetic-kepware-like.plain-tag-state",
+          "version": "1.0.0"
+        },
+        "locators": [
+          {
+            "artifactId": "project",
+            "at": {
+              "kind": "json-pointer",
+              "pointer": "/channels/0/devices/0/tags/0"
+            }
+          }
+        ],
+        "dependsOn": {
+          "claimIds": [
+            "c.speed-address",
+            "c.speed-engineering"
+          ]
+        }
+      }
+    ],
+    "unresolved": [
+      {
+        "issueId": "u.alias",
+        "code": "missing",
+        "edgeId": "e.alias-ref",
+        "reason": "the referenced device is not in the artifact; it may be in a file that was not handed over",
+        "affectedNodeIds": [
+          "n.ch1.dev1.alias"
+        ]
+      },
+      {
+        "issueId": "u.pick",
+        "code": "ambiguous",
+        "edgeId": "e.pick-ref",
+        "reason": "two tags named Speed; a person has to say which one is meant",
+        "affectedNodeIds": [
+          "n.ch1.dev1.pick"
+        ]
+      }
+    ],
+    "coverage": {
+      "capture": "unknown",
+      "artifactsRead": 1,
+      "artifactsSkipped": 0
+    },
+    "diagnostics": []
+  },
+  "digest": "b9bc85d667d78d0e274e33122724638994cfc07bc840ed4fe6435af24bcda1c1"
+}

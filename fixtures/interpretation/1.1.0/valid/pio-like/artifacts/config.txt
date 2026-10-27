@@ -1,0 +1,18 @@
+# synthetic-pio-like configuration. An invented format for contract tests; not a vendor format.
+[connection plc1]
+address = 10.0.0.10
+protocol = synthetic
+
+[map Line1.Temp]
+source = plc1:D100
+scale = 0.1
+unit = degC
+
+[map Line1.TempAvg]
+script = avg(Line1.Temp, 10)
+
+[map Line1.Count]
+source = plc2:D200
+
+[map Line1.Reset]
+script = on_change(Line1.Count) then write(plc1:D300, 0)

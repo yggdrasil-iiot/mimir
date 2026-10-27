@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:mimir:interpretation:1.1.0:interpretation-snapshot.schema.json",
+  "title": "InterpretationSnapshot — what one interpreter read from one pinned bundle",
+  "type": "object",
+  "$defs": {
+    "nodeId": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+    "nativeNode": {
+      "type": "object",
+      "properties": {
+        "nodeId": { "$ref": "#/$defs/nodeId" },
+        "namespace": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+        "nativeId": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "nativePath": { "type": "array", "items": { "type": "string", "maxLength": 1000 } },
+        "kind": { "enum": ["connection", "group", "tag", "map-entry", "operation", "policy", "opaque"] },
+        "locator": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/locator" },
+        "payload": {
+          "description": "Where the original text of this node is, for opaque or unread content. The bytes stay in the artifact.",
+          "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/locator"
+        },
+        "state": {
+          "description": "Whether this node keeps state between evaluations. unknown is allowed and must come with a behavior-unknown item; the interpreter does not guess.",
+          "enum": ["stateless", "stateful", "unknown"]
+        },
+        "stateKinds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["previous-value", "accumulator", "edge-detect", "timer", "feedback"] }
+        },
+        "stateClaimId": {
+          "description": "The claim that is the evidence for state: same node, field \"state\", the same value, status asserted.",
+          "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id"
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "value": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/scalar" }
+            },
+            "required": ["name", "value"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["nodeId", "namespace", "nativeId", "kind", "locator"],
+      "additionalProperties": false,
+      "dependentRequired": { "stateKinds": ["state"], "stateClaimId": ["state"] },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "opaque" } } },
+          "then": { "required": ["payload"] }
+        },
+        {
+          "if": { "properties": { "kind": { "enum": ["operation", "opaque"] } } },
+          "then": { "required": ["state"] }
+        },
+        {
+          "if": { "properties": { "state": { "const": "stateful" } }, "required": ["state"] },
+          "then": { "required": ["stateKinds"] },
+          "else": { "not": { "required": ["stateKinds"] } }
+        },
+        {
+          "if": { "properties": { "state": { "enum": ["stateless", "stateful"] } }, "required": ["state"] },
+          "then": { "required": ["stateClaimId"] },
+          "else": { "not": { "required": ["stateClaimId"] } }
+        }
+      ]
+    },
+    "referenceEdge": {
+      "type": "object",
+      "properties": {
+        "edgeId": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+        "owner": {
+          "type": "object",
+          "properties": {
+            "nodeId": { "$ref": "#/$defs/nodeId" },
+            "field": { "type": "string", "minLength": 1, "maxLength": 200 }
+          },
+          "required": ["nodeId", "field"],
+          "additionalProperties": false
+        },
+        "relation": { "enum": ["input", "reference", "contains", "inherits", "overrides", "policy", "external"] },
+        "access": {
+          "description": "What the owner does through this dependency: read a value, write one, or be triggered by an event. Required on every relation but contains, forbidden on contains. unknown is allowed; the interpreter does not guess.",
+          "enum": ["read", "write", "event", "unknown"]
+        },
+        "targetText": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "resolution": { "enum": ["resolved", "missing", "ambiguous", "external-required", "unsupported"] },
+        "targetNodeId": { "$ref": "#/$defs/nodeId" },
+        "candidates": { "type": "array", "items": { "$ref": "#/$defs/nodeId" } },
+        "basis": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" }
+      },
+      "required": ["edgeId", "owner", "relation", "targetText", "resolution", "basis"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "resolution": { "const": "resolved" } } },
+          "then": { "required": ["targetNodeId"] },
+          "else": { "not": { "required": ["targetNodeId"] } }
+        },
+        {
+          "if": { "properties": { "resolution": { "const": "ambiguous" } } },
+          "then": { "required": ["candidates"], "properties": { "candidates": { "minItems": 2 } } }
+        },
+        {
+          "if": { "properties": { "relation": { "const": "contains" } } },
+          "then": { "not": { "required": ["access"] } },
+          "else": { "required": ["access"] }
+        }
+      ]
+    },
+    "claim": {
+      "type": "object",
+      "properties": {
+        "claimId": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+        "subject": {
+          "type": "object",
+          "properties": {
+            "nodeId": { "$ref": "#/$defs/nodeId" },
+            "field": { "type": "string", "minLength": 1, "maxLength": 200 }
+          },
+          "required": ["nodeId", "field"],
+          "additionalProperties": false
+        },
+        "value": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/scalar" },
+        "evidenceBasis": {
+          "description": "The snapshot carries only what the interpreter saw or derived. declared-by-reviewer and verified-by-virtual-case belong to the consumer.",
+          "enum": ["observed-in-artifact", "derived-by-rule"]
+        },
+        "locators": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/locator" }
+        },
+        "rule": {
+          "type": "object",
+          "properties": {
+            "ruleId": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+            "version": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/version" }
+          },
+          "required": ["ruleId", "version"],
+          "additionalProperties": false
+        },
+        "dependsOn": {
+          "type": "object",
+          "properties": {
+            "claimIds": { "type": "array", "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" } },
+            "edgeIds": { "type": "array", "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" } }
+          },
+          "additionalProperties": false
+        },
+        "status": { "enum": ["asserted", "partial", "unknown"] }
+      },
+      "required": ["claimId", "subject", "value", "evidenceBasis", "locators", "status"],
+      "additionalProperties": false,
+      "if": { "properties": { "evidenceBasis": { "const": "derived-by-rule" } } },
+      "then": { "required": ["rule"] },
+      "else": { "not": { "required": ["rule"] } }
+    },
+    "unresolvedItem": {
+      "type": "object",
+      "properties": {
+        "issueId": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+        "code": { "enum": ["unsupported", "missing", "ambiguous", "behavior-unknown", "external-required"] },
+        "nodeId": { "$ref": "#/$defs/nodeId" },
+        "field": { "type": "string", "maxLength": 200 },
+        "edgeId": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+        "locator": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/locator" },
+        "reason": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" },
+        "affectedNodeIds": { "type": "array", "items": { "$ref": "#/$defs/nodeId" } }
+      },
+      "required": ["issueId", "code", "reason", "affectedNodeIds"],
+      "anyOf": [
+        { "required": ["nodeId"] },
+        { "required": ["edgeId"] },
+        { "required": ["locator"] }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "kind": { "const": "interpretation-snapshot" },
+    "contractVersion": { "const": "1.1.0" },
+    "id": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+    "version": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/version" },
+    "body": {
+      "type": "object",
+      "properties": {
+        "bundleRef": {
+          "allOf": [
+            { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/digestRef" },
+            { "properties": { "kind": { "const": "source-bundle" } } }
+          ]
+        },
+        "profileRef": {
+          "allOf": [
+            { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/digestRef" },
+            { "properties": { "kind": { "const": "interpretation-profile" } } }
+          ]
+        },
+        "inputManifest": {
+          "description": "The artifacts this interpretation read, each pinned by SHA-256.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/artifactPin" }
+        },
+        "context": {
+          "description": "Logical context supplied with the request, recorded as given.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/id" },
+              "value": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/text" }
+            },
+            "required": ["key", "value"],
+            "additionalProperties": false
+          }
+        },
+        "nativeNodes": { "type": "array", "items": { "$ref": "#/$defs/nativeNode" } },
+        "referenceEdges": { "type": "array", "items": { "$ref": "#/$defs/referenceEdge" } },
+        "claims": { "type": "array", "items": { "$ref": "#/$defs/claim" } },
+        "unresolved": { "type": "array", "items": { "$ref": "#/$defs/unresolvedItem" } },
+        "coverage": {
+          "type": "object",
+          "properties": {
+            "capture": { "enum": ["unknown", "partial", "declared-complete"] },
+            "artifactsRead": { "type": "integer", "minimum": 0, "maximum": 10000 },
+            "artifactsSkipped": { "type": "integer", "minimum": 0, "maximum": 10000 }
+          },
+          "required": ["capture", "artifactsRead", "artifactsSkipped"],
+          "additionalProperties": false
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/diagnostic" }
+        }
+      },
+      "required": ["bundleRef", "profileRef", "inputManifest", "context", "nativeNodes", "referenceEdges", "claims", "unresolved", "coverage", "diagnostics"],
+      "additionalProperties": false
+    },
+    "digest": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/sha256" },
+    "envelope": { "$ref": "urn:mimir:interpretation:1.1.0:common.schema.json#/$defs/envelope" }
+  },
+  "required": ["kind", "contractVersion", "id", "version", "body", "digest"],
+  "additionalProperties": false
+}

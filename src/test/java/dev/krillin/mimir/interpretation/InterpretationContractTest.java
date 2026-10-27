@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.file.Files;
@@ -21,46 +21,47 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InterpretationContractTest {
 
-    static final Path ROOT = Path.of("fixtures/interpretation/1.0.0");
+    static final Path ROOT = Path.of("fixtures/interpretation");
 
-    static JsonNode load(String base, String file) throws Exception {
-        return InterpretationContract.parse(Files.readString(ROOT.resolve("valid").resolve(base).resolve(file)));
+    static JsonNode load(String version, String base, String file) throws Exception {
+        return InterpretationContract.parse(Files.readString(ROOT.resolve(version).resolve("valid").resolve(base).resolve(file)));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"pio-like", "kepware-like"})
-    void validSnapshotPassesAgainstItsBundleAndProfile(String base) throws Exception {
+    @CsvSource({"1.0.0,pio-like", "1.0.0,kepware-like", "1.1.0,pio-like", "1.1.0,kepware-like"})
+    void validSnapshotPassesAgainstItsBundleAndProfile(String version, String base) throws Exception {
         assertDoesNotThrow(() -> InterpretationContract.checkPinned(
-                load(base, "interpretation-snapshot.json"),
-                load(base, "source-bundle.json"),
-                load(base, "interpretation-profile.json")));
+                load(version, base, "interpretation-snapshot.json"),
+                load(version, base, "source-bundle.json"),
+                load(version, base, "interpretation-profile.json")));
     }
 
-    @Test
-    void validRequestAndResultPass() throws Exception {
-        JsonNode bundle = load("pio-like", "source-bundle.json");
-        JsonNode profile = load("pio-like", "interpretation-profile.json");
-        JsonNode request = load("pio-like", "interpret-request.json");
+    @ParameterizedTest
+    @ValueSource(strings = {"1.0.0", "1.1.0"})
+    void validRequestAndResultPass(String version) throws Exception {
+        JsonNode bundle = load(version, "pio-like", "source-bundle.json");
+        JsonNode profile = load(version, "pio-like", "interpretation-profile.json");
+        JsonNode request = load(version, "pio-like", "interpret-request.json");
         assertDoesNotThrow(() -> InterpretationContract.checkRequest(request, bundle, profile));
         assertDoesNotThrow(() -> InterpretationContract.checkResult(
-                load("pio-like", "interpret-result.json"), request, load("pio-like", "interpretation-snapshot.json")));
+                load(version, "pio-like", "interpret-result.json"), request, load(version, "pio-like", "interpretation-snapshot.json")));
     }
 
     /** The fixture digests were stamped by scripts/interpretation_digest.py; this is the second implementation agreeing. */
     @ParameterizedTest
-    @ValueSource(strings = {"pio-like", "kepware-like"})
-    void javaDigestEqualsThePythonStampedDigest(String base) throws Exception {
+    @CsvSource({"1.0.0,pio-like", "1.0.0,kepware-like", "1.1.0,pio-like", "1.1.0,kepware-like"})
+    void javaDigestEqualsThePythonStampedDigest(String version, String base) throws Exception {
         for (String file : List.of("source-bundle.json", "interpretation-profile.json", "interpretation-snapshot.json")) {
-            JsonNode doc = load(base, file);
+            JsonNode doc = load(version, base, file);
             assertEquals(doc.get("digest").asText(), InterpretationDigest.compute(doc), base + "/" + file);
         }
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"pio-like", "kepware-like"})
-    void bundleHashesAreTheBytesOnDisk(String base) throws Exception {
-        for (JsonNode a : load(base, "source-bundle.json").get("body").get("artifacts")) {
-            byte[] bytes = Files.readAllBytes(ROOT.resolve("valid").resolve(base).resolve(a.get("path").asText()));
+    @CsvSource({"1.0.0,pio-like", "1.0.0,kepware-like", "1.1.0,pio-like", "1.1.0,kepware-like"})
+    void bundleHashesAreTheBytesOnDisk(String version, String base) throws Exception {
+        for (JsonNode a : load(version, base, "source-bundle.json").get("body").get("artifacts")) {
+            byte[] bytes = Files.readAllBytes(ROOT.resolve(version).resolve("valid").resolve(base).resolve(a.get("path").asText()));
             assertEquals(a.get("sha256").asText(), InterpretationDigest.sha256(bytes), a.get("artifactId").asText());
             assertEquals(a.get("sizeBytes").asLong(), bytes.length, a.get("artifactId").asText());
         }
@@ -68,18 +69,23 @@ class InterpretationContractTest {
 
     @TestFactory
     List<DynamicTest> invalidCases() throws Exception {
-        JsonNode cases = InterpretationContract.parse(Files.readString(ROOT.resolve("invalid/cases.json"))).get("cases");
         List<DynamicTest> tests = new ArrayList<>();
-        for (JsonNode c : cases) {
-            tests.add(DynamicTest.dynamicTest(c.get("name").asText(), () -> runCase(c)));
+        int expected = 0;
+        for (String version : List.of("1.0.0", "1.1.0")) {
+            JsonNode cases = InterpretationContract.parse(
+                    Files.readString(ROOT.resolve(version).resolve("invalid/cases.json"))).get("cases");
+            expected += cases.size();
+            for (JsonNode c : cases) {
+                tests.add(DynamicTest.dynamicTest(version + " " + c.get("name").asText(), () -> runCase(version, c)));
+            }
         }
-        assertEquals(cases.size(), tests.size());
+        assertEquals(expected, tests.size());
         return tests;
     }
 
-    private static void runCase(JsonNode c) throws Exception {
+    private static void runCase(String version, JsonNode c) throws Exception {
         String base = c.get("base").asText();
-        ObjectNode doc = (ObjectNode) load(base, c.get("file").asText());
+        ObjectNode doc = (ObjectNode) load(version, base, c.get("file").asText());
         for (JsonNode edit : c.get("edits")) {
             apply(doc, edit);
         }
@@ -89,13 +95,13 @@ class InterpretationContractTest {
         JsonNode companions = c.path("companions");
         String mode = c.get("mode").asText();
         JsonNode first = switch (mode) {
-            case "pinned", "request" -> companion(companions, "bundle", base, "source-bundle.json");
-            case "result" -> companion(companions, "request", base, "interpret-request.json");
+            case "pinned", "request" -> companion(companions, "bundle", version, base, "source-bundle.json");
+            case "result" -> companion(companions, "request", version, base, "interpret-request.json");
             default -> null;
         };
         JsonNode second = switch (mode) {
-            case "pinned", "request" -> companion(companions, "profile", base, "interpretation-profile.json");
-            case "result" -> companion(companions, "snapshot", base, "interpretation-snapshot.json");
+            case "pinned", "request" -> companion(companions, "profile", version, base, "interpretation-profile.json");
+            case "result" -> companion(companions, "snapshot", version, base, "interpretation-snapshot.json");
             default -> null;
         };
         Runnable check = switch (mode) {
@@ -113,13 +119,13 @@ class InterpretationContractTest {
         }
     }
 
-    /** The document a case is checked against: the same base by default, or another base and/or edited. */
-    private static JsonNode companion(JsonNode companions, String role, String base, String file) throws Exception {
+    /** The document a case is checked against: the same version and base by default, or another one and/or edited. */
+    private static JsonNode companion(JsonNode companions, String role, String version, String base, String file) throws Exception {
         JsonNode spec = companions.path(role);
         if (spec.isMissingNode()) {
-            return load(base, file);
+            return load(version, base, file);
         }
-        ObjectNode doc = (ObjectNode) load(spec.path("base").asText(base), file);
+        ObjectNode doc = (ObjectNode) load(spec.path("version").asText(version), spec.path("base").asText(base), file);
         for (JsonNode edit : spec.path("edits")) {
             apply(doc, edit);
         }

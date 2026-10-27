@@ -10,7 +10,7 @@
     { "name": "envelope-is-outside-the-digest", "base": "pio-like", "file": "interpretation-snapshot.json", "mode": "single", "restamp": false,
       "edits": [ { "op": "set", "path": "/envelope/createdAt", "value": "2030-01-01T00:00:00Z" } ], "expect": null },
     { "name": "unknown-contract-version", "base": "pio-like", "file": "interpretation-snapshot.json", "mode": "single", "restamp": true,
-      "edits": [ { "op": "set", "path": "/contractVersion", "value": "1.1.0" } ], "expect": "contract.version-unsupported" },
+      "edits": [ { "op": "set", "path": "/contractVersion", "value": "1.2.0" } ], "expect": "contract.version-unsupported" },
     { "name": "unknown-kind", "base": "pio-like", "file": "interpretation-snapshot.json", "mode": "single", "restamp": false,
       "edits": [ { "op": "set", "path": "/kind", "value": "interpretation-snapshot-v2" } ], "expect": "contract.kind-unknown" },
     { "name": "decimal-number-instead-of-string", "base": "pio-like", "file": "interpretation-snapshot.json", "mode": "single", "restamp": false,

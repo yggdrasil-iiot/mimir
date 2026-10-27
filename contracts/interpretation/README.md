@@ -1,4 +1,4 @@
-# Interpretation snapshot contract 1.0.0
+# Interpretation snapshot contract 1.0.0 and 1.1.0
 
 ## Purpose
 
@@ -26,6 +26,23 @@
 
 **A consumer can check structure, digests, and references, but cannot check whether an interpretation is right.** What a consumer can check: schema, digest, cross-references inside a snapshot (every node, edge, claim and locator it names exists; locators point only at artifacts the snapshot read), and the pins against the bundle and profile it names (artifact hashes, rule versions). What it cannot check: that the interpretation is right — that would need a second parser, which the single-reader decision rules out.
 
+## 1.1.0 — access and state
+
+**Version 1.1.0 adds dependency access and node state to interpretation snapshots while keeping 1.0.0 accepted and digest rules unchanged.**
+
+- Version `1.0.0` is unchanged and still accepted; new schemas reside under `contracts/interpretation/1.1.0/`.
+- The digest rule (RFC 8785 JCS, SHA-256, omitting `digest` and `envelope`) and number rules are unchanged.
+- Only the snapshot schema gains members; the other five schemas differ from `1.0.0` only in the version (`$id`, references and `contractVersion`).
+- `referenceEdge` gains `access` (`read`, `write`, `event`, or `unknown`): required on every relation except `contains`, where it is forbidden.
+- On `referenceEdge`, `unknown` is permitted so the interpreter does not guess.
+- `nativeNode` gains `state` (`stateless`, `stateful`, or `unknown`): required on `operation` and `opaque` nodes, optional on others.
+- `stateful` requires `stateKinds` (one or more of `previous-value`, `accumulator`, `edge-detect`, `timer`, `feedback`); `stateKinds` is forbidden otherwise.
+- `stateless` and `stateful` require `stateClaimId`; `unknown` forbids `stateClaimId`.
+- `stateClaimId` must name a claim present in the snapshot (`snapshot.claim-missing`).
+- The referenced claim must target the same node, field `state`, the same value, and status `asserted` (`snapshot.state-claim-mismatch`).
+- An `unknown` state requires a `behavior-unknown` unresolved item on that node (`snapshot.state-unknown-unexplained`).
+- Documents checked together must share one contract version (`contract.version-mixed`); mixed sets are refused, not reconciled.
+
 ## Implementations
 
 **Two implementations verify the canonical serialization.** The Java checker (`dev.krillin.mimir.interpretation`) and an independent, standard-library-only Python script (`scripts/interpretation_digest.py`) are tested against each other. The fixture digests are stamped by the Python script and verified by the Java tests, so a disagreement fails the build.
@@ -35,7 +52,8 @@
 
 ## Fixtures
 
-**Fixtures are under `fixtures/interpretation/1.0.0/`:**
+**Fixtures are under `fixtures/interpretation/1.0.0/` and `fixtures/interpretation/1.1.0/` with the same layout:**
+- `jcs-vectors.json` is only under `1.0.0` because the digest rule did not change.
 - `jcs-vectors.json` — canonical forms written by hand from RFC 8785, including its key-sorting example, plus inputs that must be rejected.
 - `valid/pio-like` and `valid/kepware-like` — two synthetic sets whose artifacts use an invented format — they are not vendor formats, and passing them is not support for any product.
 - `invalid/cases.json` — rejection cases written as edits to the valid documents, each naming the violation code a consumer must report, so a consumer can run the same cases.

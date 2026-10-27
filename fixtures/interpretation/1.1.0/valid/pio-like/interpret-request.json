@@ -1,0 +1,40 @@
+{
+  "kind": "interpret-request",
+  "contractVersion": "1.1.0",
+  "requestId": "synthetic/pio-like/request-1",
+  "bundleRef": {
+    "kind": "source-bundle",
+    "id": "synthetic/pio-like/bundle",
+    "version": "1.0.0",
+    "digest": "3e257cf3dbc3117391f790beec22f37009fd5ba83625f93204c75c90fd5ea9e0"
+  },
+  "artifactPins": [
+    {
+      "artifactId": "config",
+      "sha256": "ef3875c754bbc14c5f0141e5c87bfed487d7345724e55d3667b60030b51c0535"
+    },
+    {
+      "artifactId": "connection-redacted",
+      "sha256": "6558282ee56eef33eca8c9dbba787f4d608fe11f8183ec13a2d8b8193c3c27ec"
+    }
+  ],
+  "profileRef": {
+    "kind": "interpretation-profile",
+    "id": "synthetic/pio-like/profile",
+    "version": "1.0.0",
+    "digest": "ba5081c1c2c9d65b4d768ceddf912f0e4c788f77e60a920a830142be98797517"
+  },
+  "hints": [
+    {
+      "subject": "product",
+      "value": "synthetic-pio-like",
+      "basis": "stated by whoever handed the files over"
+    }
+  ],
+  "context": [
+    {
+      "key": "site",
+      "value": "synthetic"
+    }
+  ]
+}

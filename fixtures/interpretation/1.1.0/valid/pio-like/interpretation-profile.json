@@ -1,0 +1,47 @@
+{
+  "kind": "interpretation-profile",
+  "contractVersion": "1.1.0",
+  "id": "synthetic/pio-like/profile",
+  "version": "1.0.0",
+  "body": {
+    "interpreter": {
+      "name": "synthetic-pio-like-interpreter",
+      "version": "0.1.0",
+      "implementationDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "supports": [
+      {
+        "product": "synthetic-pio-like",
+        "versions": [
+          "1"
+        ],
+        "inputFormats": [
+          "synthetic-ini-like"
+        ]
+      }
+    ],
+    "unknownVersionPolicy": "reject",
+    "rules": [
+      {
+        "ruleId": "synthetic-pio-like.scale",
+        "version": "1.0.0",
+        "summary": "engineering value = raw value times the section's scale"
+      },
+      {
+        "ruleId": "synthetic-pio-like.state-by-function",
+        "version": "1.0.0",
+        "summary": "a script calling on_change keeps the previous value to detect an edge"
+      }
+    ],
+    "limits": {
+      "maxArtifacts": 100,
+      "maxTotalBytes": 10485760,
+      "maxReferenceDepth": 32,
+      "maxNodes": 100000
+    },
+    "knownGaps": [
+      "scripts are kept as opaque text and never evaluated"
+    ]
+  },
+  "digest": "ba5081c1c2c9d65b4d768ceddf912f0e4c788f77e60a920a830142be98797517"
+}

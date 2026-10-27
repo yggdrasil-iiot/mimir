@@ -1,0 +1,390 @@
+{
+  "about": "Cases for contract 1.1.0. Each case loads a valid 1.1.0 fixture (or, where a companion names a version, a fixture of that version), applies the edits, optionally re-stamps the digest, and checks it. expect is the violation code, or null for a case that must pass.",
+  "cases": [
+    {
+      "name": "edge-without-access",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "remove",
+          "path": "/body/referenceEdges/0/access"
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "contains-edge-with-access",
+      "base": "kepware-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/referenceEdges/0/access",
+          "value": "read"
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "access-outside-the-enum",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/referenceEdges/4/access",
+          "value": "read-write"
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "access-unknown-is-allowed",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/referenceEdges/0/access",
+          "value": "unknown"
+        }
+      ],
+      "expect": null
+    },
+    {
+      "name": "access-edited-after-digest",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": false,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/referenceEdges/4/access",
+          "value": "read"
+        }
+      ],
+      "expect": "digest.mismatch"
+    },
+    {
+      "name": "opaque-node-without-state",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "remove",
+          "path": "/body/nativeNodes/3/state"
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "tag-without-state-is-allowed",
+      "base": "kepware-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "remove",
+          "path": "/body/nativeNodes/2/state"
+        },
+        {
+          "op": "remove",
+          "path": "/body/nativeNodes/2/stateClaimId"
+        }
+      ],
+      "expect": null
+    },
+    {
+      "name": "state-kinds-without-state",
+      "base": "kepware-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "remove",
+          "path": "/body/nativeNodes/2/state"
+        },
+        {
+          "op": "remove",
+          "path": "/body/nativeNodes/2/stateClaimId"
+        },
+        {
+          "op": "set",
+          "path": "/body/nativeNodes/2/stateKinds",
+          "value": [
+            "timer"
+          ]
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "stateful-without-kinds",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "remove",
+          "path": "/body/nativeNodes/6/stateKinds"
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "stateless-with-kinds",
+      "base": "kepware-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/nativeNodes/2/stateKinds",
+          "value": [
+            "timer"
+          ]
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "state-kind-outside-the-enum",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/nativeNodes/6/stateKinds",
+          "value": [
+            "debounce"
+          ]
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "known-state-without-claim",
+      "base": "kepware-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "remove",
+          "path": "/body/nativeNodes/2/stateClaimId"
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "unknown-state-with-claim",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/nativeNodes/3/stateClaimId",
+          "value": "c.reset-state"
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "state-claim-missing",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/nativeNodes/6/stateClaimId",
+          "value": "c.no-such-claim"
+        }
+      ],
+      "expect": "snapshot.claim-missing"
+    },
+    {
+      "name": "state-claim-about-another-node",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/claims/6/subject/nodeId",
+          "value": "n.line1-reset"
+        }
+      ],
+      "expect": "snapshot.state-claim-mismatch"
+    },
+    {
+      "name": "state-claim-about-another-field",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/claims/6/subject/field",
+          "value": "behavior"
+        }
+      ],
+      "expect": "snapshot.state-claim-mismatch"
+    },
+    {
+      "name": "state-claim-with-another-value",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/claims/6/value",
+          "value": "stateless"
+        }
+      ],
+      "expect": "snapshot.state-claim-mismatch"
+    },
+    {
+      "name": "state-claim-not-asserted",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/claims/6/status",
+          "value": "partial"
+        }
+      ],
+      "expect": "snapshot.state-claim-mismatch"
+    },
+    {
+      "name": "state-claim-pointing-at-another-claim",
+      "base": "kepware-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/nativeNodes/2/stateClaimId",
+          "value": "c.speed-address"
+        }
+      ],
+      "expect": "snapshot.state-claim-mismatch"
+    },
+    {
+      "name": "unknown-state-without-behavior-unknown",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "remove",
+          "path": "/body/unresolved/0"
+        }
+      ],
+      "expect": "snapshot.state-unknown-unexplained"
+    },
+    {
+      "name": "unknown-state-explained-on-another-node",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/body/unresolved/0/nodeId",
+          "value": "n.line1-tempavg"
+        }
+      ],
+      "expect": "snapshot.state-unknown-unexplained"
+    },
+    {
+      "name": "snapshot-1.1.0-body-claiming-1.0.0",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/contractVersion",
+          "value": "1.0.0"
+        }
+      ],
+      "expect": "contract.schema"
+    },
+    {
+      "name": "contract-version-1.2.0",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "single",
+      "restamp": true,
+      "edits": [
+        {
+          "op": "set",
+          "path": "/contractVersion",
+          "value": "1.2.0"
+        }
+      ],
+      "expect": "contract.version-unsupported"
+    },
+    {
+      "name": "snapshot-pinned-to-a-1.0.0-bundle",
+      "base": "pio-like",
+      "file": "interpretation-snapshot.json",
+      "mode": "pinned",
+      "restamp": true,
+      "edits": [],
+      "expect": "contract.version-mixed",
+      "companions": {
+        "bundle": {
+          "version": "1.0.0"
+        }
+      }
+    },
+    {
+      "name": "result-for-a-1.0.0-request",
+      "base": "pio-like",
+      "file": "interpret-result.json",
+      "mode": "result",
+      "restamp": false,
+      "edits": [],
+      "expect": "contract.version-mixed",
+      "companions": {
+        "request": {
+          "version": "1.0.0"
+        }
+      }
+    }
+  ]
+}
