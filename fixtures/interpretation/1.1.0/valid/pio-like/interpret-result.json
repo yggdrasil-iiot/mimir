@@ -1,0 +1,17 @@
+{
+  "kind": "interpret-result",
+  "contractVersion": "1.1.0",
+  "requestId": "synthetic/pio-like/request-1",
+  "status": "accepted-for-interpretation",
+  "snapshotRef": {
+    "kind": "interpretation-snapshot",
+    "id": "synthetic/pio-like/snapshot",
+    "version": "1.0.0",
+    "digest": "8da4a51645761e01196c43c13562a51c311e2a72f23d660073fb9e8d25d4ee96"
+  },
+  "diagnostics": [],
+  "envelope": {
+    "createdAt": "2026-10-21T00:00:00Z",
+    "requestId": "synthetic/pio-like/request-1"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "kind": "source-bundle",
+  "contractVersion": "1.1.0",
+  "id": "synthetic/pio-like/bundle",
+  "version": "1.0.0",
+  "body": {
+    "origin": "synthetic",
+    "captureScope": "partial",
+    "artifacts": [
+      {
+        "artifactId": "config",
+        "path": "artifacts/config.txt",
+        "sha256": "ef3875c754bbc14c5f0141e5c87bfed487d7345724e55d3667b60030b51c0535",
+        "sizeBytes": 380,
+        "role": "configuration",
+        "obtained": {
+          "at": "2026-10-21T00:00:00Z",
+          "method": "handed-over"
+        }
+      },
+      {
+        "artifactId": "connection",
+        "path": "artifacts/connection.txt",
+        "sha256": "f211ed3f545d0faf7f63a20e74d36629767fd657b8e5fc96d492d74dd72ac044",
+        "sizeBytes": 173,
+        "role": "configuration",
+        "obtained": {
+          "at": "2026-10-21T00:00:00Z",
+          "method": "handed-over"
+        }
+      },
+      {
+        "artifactId": "connection-redacted",
+        "path": "artifacts/connection-redacted.txt",
+        "sha256": "6558282ee56eef33eca8c9dbba787f4d608fe11f8183ec13a2d8b8193c3c27ec",
+        "sizeBytes": 155,
+        "role": "redacted-copy",
+        "obtained": {
+          "at": "2026-10-21T00:00:00Z",
+          "method": "handed-over"
+        },
+        "redaction": {
+          "derivedFrom": "connection",
+          "removedFields": [
+            "password"
+          ]
+        }
+      }
+    ],
+    "productClaims": [
+      {
+        "subject": "product",
+        "value": "synthetic-pio-like",
+        "basis": "stated-by-provider"
+      },
+      {
+        "subject": "format",
+        "value": "synthetic-ini-like",
+        "basis": "observed-in-artifact",
+        "artifactIds": [
+          "config"
+        ]
+      }
+    ]
+  },
+  "digest": "3e257cf3dbc3117391f790beec22f37009fd5ba83625f93204c75c90fd5ea9e0",
+  "envelope": {
+    "createdAt": "2026-10-21T00:00:00Z"
+  }
+}

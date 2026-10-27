@@ -1,0 +1,5 @@
+# synthetic-pio-like configuration. An invented format for contract tests.
+[connection plc1]
+address = 10.0.0.10
+protocol = synthetic
+password = synthetic-not-a-real-secret

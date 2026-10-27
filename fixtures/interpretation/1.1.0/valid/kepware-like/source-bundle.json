@@ -1,0 +1,44 @@
+{
+  "kind": "source-bundle",
+  "contractVersion": "1.1.0",
+  "id": "synthetic/kepware-like/bundle",
+  "version": "1.0.0",
+  "body": {
+    "origin": "synthetic",
+    "captureScope": "unknown",
+    "artifacts": [
+      {
+        "artifactId": "project",
+        "path": "artifacts/project.json",
+        "sha256": "30875cea43c793ec9d43194c7d9c32c72413531f55d13c122eba8f9084a6ca18",
+        "sizeBytes": 688,
+        "role": "configuration",
+        "obtained": {
+          "at": "2026-10-21T00:00:00Z",
+          "method": "export"
+        }
+      }
+    ],
+    "productClaims": [
+      {
+        "subject": "product",
+        "value": "synthetic-kepware-like",
+        "basis": "stated-by-provider"
+      },
+      {
+        "subject": "driver",
+        "value": "synthetic-driver",
+        "basis": "observed-in-artifact",
+        "artifactIds": [
+          "project"
+        ]
+      },
+      {
+        "subject": "version",
+        "value": "not stated",
+        "basis": "unknown"
+      }
+    ]
+  },
+  "digest": "e7d21bcd878238ea9c3195ba6000ed8c02d3ed16093158a484c20fc87644ec33"
+}

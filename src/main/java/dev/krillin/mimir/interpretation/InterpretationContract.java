@@ -18,15 +18,15 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Checks interpretation-contract documents (1.0.0): schema, digest, and the cross-references a schema
- * cannot express. It checks that a snapshot is well-formed and pinned to exact inputs; it cannot check
+ * Checks interpretation-contract documents (1.0.0 and 1.1.0): schema, digest, and the cross-references a
+ * schema cannot express. It checks that a snapshot is well-formed and pinned to exact inputs; it cannot check
  * that the interpretation is right — that would take a second parser, which the single-reader decision
  * rules out.
  */
 public final class InterpretationContract {
 
-    public static final String VERSION = "1.0.0";
-    private static final String ID_PREFIX = "urn:mimir:interpretation:1.0.0:";
+    public static final Set<String> VERSIONS = Set.of("1.0.0", "1.1.0");
+    private static final String ID_PREFIX = "urn:mimir:interpretation:";
     private static final Set<String> DIGESTED = Set.of("source-bundle", "interpretation-profile", "interpretation-snapshot");
     private static final Set<String> KINDS = Set.of("source-bundle", "interpretation-profile", "interpretation-snapshot",
             "interpret-request", "interpret-result");
@@ -37,7 +37,9 @@ public final class InterpretationContract {
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
     private static final JsonSchemaFactory FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012,
-            b -> b.schemaMappers(m -> m.mapPrefix(ID_PREFIX, "classpath:contracts/interpretation/1.0.0/")));
+            b -> b.schemaMappers(m -> m
+                    .mapPrefix(ID_PREFIX + "1.0.0:", "classpath:contracts/interpretation/1.0.0/")
+                    .mapPrefix(ID_PREFIX + "1.1.0:", "classpath:contracts/interpretation/1.1.0/")));
     private static final Map<String, JsonSchema> SCHEMAS = new ConcurrentHashMap<>();
 
     private InterpretationContract() {}
@@ -57,7 +59,8 @@ public final class InterpretationContract {
         if (!doc.isObject()) throw new ContractViolation("contract.not-an-object", "");
         String kind = doc.path("kind").asText("");
         if (!KINDS.contains(kind)) throw new ContractViolation("contract.kind-unknown", kind);
-        if (!VERSION.equals(doc.path("contractVersion").asText(""))) {
+        String version = doc.path("contractVersion").asText("");
+        if (!VERSIONS.contains(version)) {
             throw new ContractViolation("contract.version-unsupported", doc.path("contractVersion").toString());
         }
         Jcs.canonicalize(doc);
@@ -68,7 +71,7 @@ public final class InterpretationContract {
                 }
             }
         }
-        Set<ValidationMessage> errors = schema(kind).validate(doc);
+        Set<ValidationMessage> errors = schema(version, kind).validate(doc);
         if (!errors.isEmpty()) {
             throw new ContractViolation("contract.schema", errors.iterator().next().getMessage());
         }
@@ -77,7 +80,7 @@ public final class InterpretationContract {
         }
         switch (kind) {
             case "source-bundle" -> checkBundle(doc.get("body"));
-            case "interpretation-snapshot" -> checkSnapshot(doc.get("body"));
+            case "interpretation-snapshot" -> checkSnapshot(doc.get("body"), version.equals("1.1.0"));
             default -> { }
         }
     }
@@ -87,6 +90,7 @@ public final class InterpretationContract {
         check(snapshot);
         check(bundle);
         check(profile);
+        sameVersion(snapshot, bundle, profile);
         JsonNode body = snapshot.get("body");
         requireRef(body.get("bundleRef"), bundle, "pin.bundle-mismatch");
         requireRef(body.get("profileRef"), profile, "pin.profile-mismatch");
@@ -122,6 +126,7 @@ public final class InterpretationContract {
         check(request);
         check(bundle);
         check(profile);
+        sameVersion(request, bundle, profile);
         requireRef(request.get("bundleRef"), bundle, "pin.bundle-mismatch");
         requireRef(request.get("profileRef"), profile, "pin.profile-mismatch");
         Map<String, String> artifacts = new HashMap<>();
@@ -139,6 +144,7 @@ public final class InterpretationContract {
     public static void checkResult(JsonNode result, JsonNode request, JsonNode snapshot) {
         check(result);
         check(request);
+        sameVersion(result, request);
         if (!result.get("requestId").asText().equals(request.get("requestId").asText())) {
             throw new ContractViolation("result.request-mismatch", result.get("requestId").asText());
         }
@@ -146,6 +152,7 @@ public final class InterpretationContract {
             return;
         }
         check(snapshot);
+        sameVersion(result, snapshot);
         requireRef(result.get("snapshotRef"), snapshot, "pin.snapshot-mismatch");
         JsonNode body = snapshot.get("body");
         if (!body.get("bundleRef").equals(request.get("bundleRef"))) {
@@ -162,6 +169,17 @@ public final class InterpretationContract {
             String id = pin.get("artifactId").asText();
             if (!requested.containsKey(id)) throw new ContractViolation("pin.artifact-unknown", "not requested: " + id);
             if (!requested.get(id).equals(pin.get("sha256").asText())) throw new ContractViolation("pin.artifact-mismatch", id);
+        }
+    }
+
+    /** Documents checked together must be of one contract version; a mixed set is refused rather than reconciled. */
+    private static void sameVersion(JsonNode first, JsonNode... others) {
+        String version = first.get("contractVersion").asText();
+        for (JsonNode other : others) {
+            if (!version.equals(other.get("contractVersion").asText())) {
+                throw new ContractViolation("contract.version-mixed",
+                        version + " and " + other.get("contractVersion").asText());
+            }
         }
     }
 
@@ -196,7 +214,7 @@ public final class InterpretationContract {
         }
     }
 
-    private static void checkSnapshot(JsonNode body) {
+    private static void checkSnapshot(JsonNode body, boolean stateMarked) {
         Set<String> pinned = new HashSet<>();
         for (JsonNode p : body.get("inputManifest")) {
             if (!pinned.add(p.get("artifactId").asText())) {
@@ -241,6 +259,38 @@ public final class InterpretationContract {
         for (JsonNode d : body.get("diagnostics")) {
             if (d.has("locator")) locator(d.get("locator"), pinned);
         }
+        if (stateMarked) checkState(body);
+    }
+
+    /**
+     * 1.1.0: a known state must rest on an asserted claim about that node's "state" with the same value, and
+     * an unknown state must come with a behavior-unknown item on that node — the interpreter does not guess.
+     */
+    private static void checkState(JsonNode body) {
+        Map<String, JsonNode> claims = new HashMap<>();
+        for (JsonNode c : body.get("claims")) claims.put(c.get("claimId").asText(), c);
+        Set<String> behaviorUnknown = new HashSet<>();
+        for (JsonNode u : body.get("unresolved")) {
+            if (u.get("code").asText().equals("behavior-unknown") && u.has("nodeId")) {
+                behaviorUnknown.add(u.get("nodeId").asText());
+            }
+        }
+        for (JsonNode n : body.get("nativeNodes")) {
+            if (!n.has("state")) continue;
+            String nodeId = n.get("nodeId").asText();
+            String state = n.get("state").asText();
+            if (state.equals("unknown")) {
+                if (!behaviorUnknown.contains(nodeId)) throw new ContractViolation("snapshot.state-unknown-unexplained", nodeId);
+                continue;
+            }
+            JsonNode claim = claims.get(n.get("stateClaimId").asText());
+            if (claim == null) throw new ContractViolation("snapshot.claim-missing", n.get("stateClaimId").asText());
+            boolean matches = claim.get("subject").get("nodeId").asText().equals(nodeId)
+                    && claim.get("subject").get("field").asText().equals("state")
+                    && claim.get("value").isTextual() && claim.get("value").asText().equals(state)
+                    && claim.get("status").asText().equals("asserted");
+            if (!matches) throw new ContractViolation("snapshot.state-claim-mismatch", nodeId);
+        }
     }
 
     private static Set<String> unique(JsonNode items, String field) {
@@ -263,8 +313,8 @@ public final class InterpretationContract {
         }
     }
 
-    private static JsonSchema schema(String kind) {
-        return SCHEMAS.computeIfAbsent(kind,
-                k -> FACTORY.getSchema(SchemaLocation.of(ID_PREFIX + k + ".schema.json")));
+    private static JsonSchema schema(String version, String kind) {
+        String id = ID_PREFIX + version + ":" + kind + ".schema.json";
+        return SCHEMAS.computeIfAbsent(id, k -> FACTORY.getSchema(SchemaLocation.of(k)));
     }
 }
