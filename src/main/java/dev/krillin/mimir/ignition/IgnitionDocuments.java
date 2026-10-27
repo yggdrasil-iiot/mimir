@@ -66,9 +66,9 @@ public final class IgnitionDocuments {
         }
         ObjectNode limits = pb.putObject("limits");
         limits.put("maxArtifacts", 1);
-        limits.put("maxTotalBytes", 16 * 1024 * 1024);
-        limits.put("maxReferenceDepth", 64);
-        limits.put("maxNodes", 100000);
+        limits.put("maxTotalBytes", IgnitionInterpreter.MAX_TOTAL_BYTES);
+        limits.put("maxReferenceDepth", IgnitionInterpreter.MAX_REFERENCE_DEPTH);
+        limits.put("maxNodes", IgnitionInterpreter.MAX_NODES);
         ArrayNode gaps = pb.putArray("knownGaps");
         gaps.add("expressions, scripts and SQL are read, never run; functions outside the profile leave state unknown");
         gaps.add("an unqualified script path or another provider's path is left external-required");

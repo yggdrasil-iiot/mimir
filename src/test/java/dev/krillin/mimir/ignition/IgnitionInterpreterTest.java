@@ -190,6 +190,48 @@ class IgnitionInterpreterTest {
                 [{"name":"T","tagType":"AtomicTag","valueSource":"memory"},{"name":"t","tagType":"AtomicTag","valueSource":"memory"}]""")));
     }
 
+    static String limitCode(byte[] export) {
+        return assertThrows(ContractViolation.class, () -> IgnitionInterpreter.interpret("export", export)).code();
+    }
+
+    /** Folders nested {@code depth} deep, the innermost holding one memory tag. */
+    static byte[] nestedFolders(int depth) {
+        String inner = "{\"name\":\"t\",\"tagType\":\"AtomicTag\",\"valueSource\":\"memory\"}";
+        for (int i = depth; i > 0; i--) inner = "{\"name\":\"f" + i + "\",\"tagType\":\"Folder\",\"tags\":[" + inner + "]}";
+        return export("[" + inner + "]");
+    }
+
+    /** A chain of {@code length} UDT types, each inheriting from the previous one. */
+    static byte[] typeChain(int length) {
+        StringBuilder types = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            if (i > 0) types.append(',');
+            types.append("{\"name\":\"T").append(i).append("\",\"tagType\":\"UdtType\",\"typeId\":\"")
+                    .append(i == 0 ? "" : "T" + (i - 1)).append("\",\"tags\":[]}");
+        }
+        return export("[{\"name\":\"_types_\",\"tagType\":\"Folder\",\"tags\":[" + types + "]}]");
+    }
+
+    @Test
+    void profileLimitsAreRefusalsAtTheirBoundary() {
+        assertEquals("ignition.limit-exceeded", limitCode(new byte[IgnitionInterpreter.MAX_TOTAL_BYTES + 1]));
+
+        StringBuilder tags = new StringBuilder("[");
+        for (int i = 0; i < IgnitionInterpreter.MAX_NODES; i++) {
+            if (i > 0) tags.append(',');
+            tags.append("{\"name\":\"m").append(i).append("\",\"tagType\":\"AtomicTag\",\"valueSource\":\"memory\"}");
+        }
+        byte[] atLimit = export(tags + "]");
+        assertDoesNotThrow(() -> IgnitionInterpreter.interpret("export", atLimit));
+        assertEquals("ignition.limit-exceeded", limitCode(export(tags + ",{\"name\":\"over\",\"tagType\":\"AtomicTag\",\"valueSource\":\"memory\"}]")));
+
+        int depth = IgnitionInterpreter.MAX_REFERENCE_DEPTH;
+        assertDoesNotThrow(() -> IgnitionInterpreter.interpret("export", nestedFolders(depth - 1)));
+        assertEquals("ignition.limit-exceeded", limitCode(nestedFolders(depth)));
+        assertDoesNotThrow(() -> IgnitionInterpreter.interpret("export", typeChain(depth)));
+        assertEquals("ignition.limit-exceeded", limitCode(typeChain(depth + 1)));
+    }
+
     @Test
     void decimalsTravelAsCanonicalStrings() {
         assertEquals("0.1", IgnitionInterpreter.scalar(M.getNodeFactory().numberNode(new java.math.BigDecimal("1e-1"))).asText());

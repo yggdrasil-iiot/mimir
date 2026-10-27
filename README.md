@@ -40,9 +40,9 @@ java -jar target/mimir.jar ignition-score <export.json> <key.json> [--details]
 
 `--omit <member>` deliberately drops a member (a test hook for exercising Bifrost's breaking-change rejection — `member.removed`), never used on the faithful derive path.
 
-`ignition-interpret` writes `source-bundle.json`, `interpretation-profile.json`, and `interpretation-snapshot.json`. It validates contract and pins before writing.
+`ignition-interpret` validates contracts and pins, enforces profile limits (refusing exports exceeding 16 MiB, 100,000 nodes, or folder/UDT depth 64 with `ignition.limit-exceeded`), and writes `source-bundle.json`, `interpretation-profile.json`, and `interpretation-snapshot.json`. The export file's modification time is recorded as the acquisition timestamp.
 
-`ignition-score` validates generated documents, then prints expected/matched/missing/extra and recall/precision per category. `--details` exposes mismatch rows. Mismatches alone do not produce a failing exit status.
+`ignition-score` validates the generated documents, compares them with an answer key, and prints expected/matched/missing/extra counts with recall and precision per category. `--details` displays individual mismatch rows.
 
 ## Acceptance gate
 
@@ -53,9 +53,8 @@ java -jar target/mimir.jar ignition-score <export.json> <key.json> [--details]
 - Design-time and low-frequency — once per type for OPC-UA derivation, and once per handed-over configuration snapshot for vendor interpretation — and not a runtime data path.
 - The OPC-UA DataType is reconstituted to the exact string vocabulary Bifrost's gate expects (`11→"Double"`, `1→"Boolean"`); `semanticId` is synthesized from a local-IRI convention (the type node carries none). The synthesized local IRI is a placeholder, not a pointer to an entry in the enterprise semantic dictionary; that dictionary sits outside Yggdrasil; linking a `semanticId` to a dictionary entry is not built.
 - `range=null` (an unconstrained numeric) is indistinguishable from any other unconstrained numeric on the type node — deny/constraint semantics live on the spec side, not the equipment type.
-- Vendor interpretation is built, design-time, offline, one export per invocation.
-- Supports folders, UDT inheritance/overrides/parameters, supported tag sources, dependencies/access, basic alarm configuration, static script targets, and bounded expression-state classification.
-- No execution of expressions, scripts, or SQL; no live gateway/device verification, semantic assignment, canonical admission, or proof that configuration is running. Detailed evaluation and limitations are in [the design note](docs/VENDOR-INTERPRETATION.md).
+- Vendor interpretation operates offline and at design time, processing one tag export per invocation. It interprets folders, UDT inheritance, overrides, parameters, tag sources (OPC, memory, expression, reference, derived, and database), dependencies with read/write/event access, alarm configuration, event-script targets, and expression-state classifications into interpretation snapshot contract 1.1.0.
+- Expressions, scripts, and SQL are parsed and classified as static configuration rather than executed, maintaining a design-time, read-only boundary. Detailed evaluation metrics and mapping specifications are in [the design note](docs/VENDOR-INTERPRETATION.md).
 
 ## Dependencies
 

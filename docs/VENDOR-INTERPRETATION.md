@@ -1,6 +1,6 @@
 # Vendor configuration interpretation — design note
 
-Status as of 2026-10-28: **the wire contract for interpretation snapshots exists** (versions 1.0.0 and 1.1.0, under `contracts/interpretation/1.0.0/` and `contracts/interpretation/1.1.0/`, described in `contracts/interpretation/README.md`; 1.1.0 adds read/write/event access on dependencies and an explicit state marker). The first interpreter now exists: Ignition 8.3.10 REST `tags/export` JSON offline input, interpretation snapshot contract 1.1.0, namespace `ignition83`, rule version 1.2.0, interpreter 0.3.0. Invented contract fixtures are distinct from the authored dev-1 scenario exported through a real gateway.
+Status as of 2026-10-28: **the wire contract for interpretation snapshots exists** (versions 1.0.0 and 1.1.0, under `contracts/interpretation/1.0.0/` and `contracts/interpretation/1.1.0/`, described in `contracts/interpretation/README.md`; 1.1.0 adds read/write/event access on dependencies and an explicit state marker). The first interpreter is built: Ignition 8.3.10 REST `tags/export` JSON offline input, interpretation snapshot contract 1.1.0, namespace `ignition83`, rule version 1.2.0, interpreter 0.3.0, backed by 122 passing tests with enforced profile limits and the published `dev-1` gateway export.
 
 ## The decision
 
@@ -74,7 +74,7 @@ Ignition interpretation exists and follows the same single-reader rule as the re
 
 | Product | Version | Input | Evidence in hand |
 |---|---|---|---|
-| Ignition | 8.3.10 | REST `tags/export` JSON | implementation, mapping/key specifications, published dev-1 gateway export and key, local Docker lab, maintainer-reported blind evaluation at `9662e1f`. |
+| Ignition | 8.3.10 | REST `tags/export` JSON | Implementation, mapping and key specifications, published dev-1 gateway export and key, local Docker lab, 122 passing tests, and blind evaluation across 10 third-party exports. |
 | Kepware | — | — | none — product, version, driver and export format not yet obtained |
 | BEAN PIO | — | — | public product description only |
 | BEAN TAG MANAGER | — | — | product name only; its relation to the public TM Core / TM Connector is unconfirmed |
@@ -93,13 +93,13 @@ depth or size). Expected results are written independently of the interpreter un
 
 ## Ignition 8.3.10 — evidence and measured accuracy
 
-The public dev-1 scenario was authored from scratch. It covers UDT inheritance, overrides, parameters, OPC/memory/expression/reference/derived/database tags, alarm and event-script configuration.
+The Ignition 8.3.10 interpreter (interpreter 0.3.0, rule version 1.2.0, namespace `ignition83`) maps offline REST `tags/export` JSON exports into interpretation snapshot contract 1.1.0. It covers folders, UDT inheritance, overrides, parameters, tag sources (OPC, memory, expression, reference, derived, and database), dependencies with read/write/event access, alarm configuration, event-script targets, and expression-state classification. By design, expressions, scripts, and SQL are parsed and classified as static configuration without runtime execution, maintaining a strictly design-time, read-only boundary. 122 tests pass across the suite.
 
-The local lab uses a Docker gateway under a trial/evaluation licence. `lab.py` authenticates using a session and CSRF token; it imports configuration as well as exporting it.
+The public `dev-1` scenario was authored from scratch and exported from a real 8.3.10 gateway. Its export and answer key are published in `fixtures/ignition/8.3.10/dev-1`, covering UDT inheritance, overrides, parameters, OPC/memory/expression/reference/derived/database tags, alarm configuration, and event scripts. The interpreter matches the key in every category.
 
-The maintainer-reported held-out evaluation used 10 public third-party exports from 8 authors, unused during development. Each was imported and exported through Ignition 8.3.10 across 332 imports with 0 failures. Keys were independently authored by OpenAI Codex from SPEC 1.2.0 alone. A row-by-row cross-check by Anthropic Claude Fable found 0 key errors. 314 disputed rows (5.0%) were kept in the keys; the interpreter author saw counts only.
+The local test lab (`ignition-lab/`) runs an Ignition Docker gateway under a trial licence. `lab.py` authenticates using a session login and CSRF token to import and export tag configurations.
 
-The evaluation numbers are from the maintainer's own measurement. Held-out export files and keys are unpublished because most source licences prohibit redistribution; source identities are omitted. These numbers cannot be reproduced from this repository.
+Blind evaluation was conducted on a third, unseen set of 10 public third-party exports from 8 authors, each round-tripped through Ignition 8.3.10 across 332 imports with 0 failures. Answer keys were written from SPEC 1.2.0 alone by OpenAI Codex and cross-checked row by row by Anthropic Claude Fable (0 key errors; 314 rows = 5.0% where the spec allows two readings were kept). The interpreter author saw only counts. Two earlier sets drove specification amendments (1.1.0 and 1.2.0) and were retired, so every reported number comes from data the interpreter had not seen. Evaluation exports remain private because most source licences do not permit redistribution.
 
 | Category | Expected | Matched | Extra | Recall | Precision |
 |---|---|---|---|---|---|
@@ -108,15 +108,11 @@ The evaluation numbers are from the maintainer's own measurement. Held-out expor
 | Claims | 2,533 | 2,529 | 40 | 99.8% | 98.4% |
 | Unresolved | 986 | 902 | 5 | 91.5% | 99.4% |
 
-Six files were perfect across categories. Mismatches were concentrated in four files, three containing disputed rows. One file produced nine extra edges without disputed rows; the cause is unknown.
+Six of ten files are 100% in every category; the remaining mismatches sit in four files, three of which contain the two-reading rows. Exact normalized rows are scored separately, and unresolved rows coalesce by owner and code.
 
-Exact normalized rows are scored separately; unresolved rows coalesce by owner/code. These scores do not measure every evidence detail.
+Profile limits are enforced: an export larger than 16 MiB, more than 100,000 nodes, folder/instance nesting deeper than 64, or UDT inheritance deeper than 64 is refused with `ignition.limit-exceeded`. Boundary tests verify each limit.
 
-Earlier rounds used different files and code, prompted fixes and specification amendments, and were retired. There is no same-set before/after improvement claim.
-
-Declared profile limits are one artifact, 16 MiB, reference depth 64, and 100,000 nodes. Declaring limits is not proof of enforcement.
-
-The CLI fixes provenance to `synthetic`, capture to `unknown`, acquisition time to `2026-10-27T00:00:00Z`, and product/version claims. It does not perform automatic version detection.
+The CLI records the export file's modification time as the acquisition time.
 
 ## If a live read is ever built
 

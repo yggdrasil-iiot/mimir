@@ -34,6 +34,10 @@ public final class IgnitionInterpreter {
 
     public static final String NAMESPACE = "ignition83";
     public static final String RULE_VERSION = "1.2.0";
+    /** Profile limits; exceeding one is a refusal, never a truncated snapshot (§ scope). */
+    public static final int MAX_TOTAL_BYTES = 16 * 1024 * 1024;
+    public static final int MAX_NODES = 100_000;
+    public static final int MAX_REFERENCE_DEPTH = 64;
     public static final List<String> RULES = List.of("identity", "node-kind", "effective-config", "dependencies",
             "references", "expression-state", "claims", "coverage", "remaining-config");
 
@@ -208,6 +212,7 @@ public final class IgnitionInterpreter {
     private final Map<String, Cfg> typeDefs = new LinkedHashMap<>();   // key: lower-case path under _types_
     private final Map<String, Cfg> typeMemo = new HashMap<>();
     private final Set<String> resolving = new HashSet<>();
+    private final Map<String, Integer> typeDepth = new HashMap<>();
 
     private final List<Node> nodes = new ArrayList<>();
     private final Map<String, Node> byLocator = new HashMap<>();       // key: folded locator
@@ -245,6 +250,9 @@ public final class IgnitionInterpreter {
      * caller wraps them into a pinned document.
      */
     public static ObjectNode interpret(String artifactId, byte[] export) {
+        if (export.length > MAX_TOTAL_BYTES) {
+            throw new ContractViolation("ignition.limit-exceeded", "export is " + export.length + " bytes; the limit is " + MAX_TOTAL_BYTES);
+        }
         IgnitionInterpreter it = new IgnitionInterpreter(artifactId, parse(export));
         return it.run();
     }
@@ -314,12 +322,18 @@ public final class IgnitionInterpreter {
         Cfg own = typeDefs.get(key);
         if (own == null || !resolving.add(key)) return null;
         Cfg result;
+        int depth = 1;
         if (own.typeId != null && !own.typeId.isEmpty()) {
             Cfg parent = effectiveType(own.typeId);
             result = parent == null ? own : merge(parent.copyInherited(), own);
+            if (parent != null) depth += typeDepth.get(own.typeId.toLowerCase(Locale.ROOT));
         } else {
             result = own;
         }
+        if (depth > MAX_REFERENCE_DEPTH) {
+            throw new ContractViolation("ignition.limit-exceeded", "type inheritance is deeper than " + MAX_REFERENCE_DEPTH);
+        }
+        typeDepth.put(key, depth);
         resolving.remove(key);
         typeMemo.put(key, result);
         return result;
@@ -328,6 +342,9 @@ public final class IgnitionInterpreter {
     // ---- emission (§2) ----------------------------------------------------------------------------------------
 
     private void emit(Cfg c, List<String> path, Node parent, Map<String, Prop> scope, boolean underTypes) {
+        if (path.size() > MAX_REFERENCE_DEPTH) {
+            throw new ContractViolation("ignition.limit-exceeded", "folder or instance nesting is deeper than " + MAX_REFERENCE_DEPTH);
+        }
         switch (c.tagType) {
             case "Folder" -> {
                 Node node = node(path, "group", c.pointer, null);
@@ -916,8 +933,15 @@ public final class IgnitionInterpreter {
         if (byLocator.putIfAbsent(fold(locator), n) != null) {
             throw new ContractViolation("ignition.locator-collision", locator);
         }
-        nodes.add(n);
+        add(n);
         return n;
+    }
+
+    private void add(Node n) {
+        if (nodes.size() == MAX_NODES) {
+            throw new ContractViolation("ignition.limit-exceeded", "the export has more than " + MAX_NODES + " nodes");
+        }
+        nodes.add(n);
     }
 
     private Node connection(String kind, String name, String pointer) {
@@ -926,7 +950,7 @@ public final class IgnitionInterpreter {
         if (existing != null) return existing;
         Node n = new Node("n." + nextNode++, locator, "connection", null, pointer, null);
         byLocator.put(fold(locator), n);
-        nodes.add(n);
+        add(n);
         issue("external-required", n, null, "the " + kind + " connection is configured on the gateway, not in this export");
         return n;
     }

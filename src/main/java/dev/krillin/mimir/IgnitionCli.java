@@ -12,6 +12,7 @@ import dev.krillin.mimir.interpretation.InterpretationContract;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -86,7 +87,8 @@ final class IgnitionCli {
     /** Interprets and checks the result against the contract before anything is written or scored. */
     private static IgnitionDocuments.Set interpret(Path export, String name) throws Exception {
         byte[] bytes = Files.readAllBytes(export);
-        IgnitionDocuments.Set docs = IgnitionDocuments.build(name, bytes, export.getFileName().toString(), "2026-10-27T00:00:00Z");
+        IgnitionDocuments.Set docs = IgnitionDocuments.build(name, bytes, export.getFileName().toString(),
+                Files.getLastModifiedTime(export).toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
         InterpretationContract.checkPinned(reparse(docs.snapshot()), reparse(docs.bundle()), reparse(docs.profile()));
         return docs;
     }
