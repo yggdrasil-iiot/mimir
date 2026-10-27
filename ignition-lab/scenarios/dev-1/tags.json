@@ -1,0 +1,179 @@
+{
+  "name": "",
+  "tagType": "Provider",
+  "tags": [
+    {
+      "name": "_types_",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "name": "Motor",
+          "tagType": "UdtType",
+          "parameters": {
+            "DeviceName": { "dataType": "String", "value": "Sim" },
+            "Index": { "dataType": "Integer", "value": 1 }
+          },
+          "tags": [
+            {
+              "name": "Speed",
+              "tagType": "AtomicTag",
+              "valueSource": "opc",
+              "opcServer": "Ignition OPC UA Server",
+              "opcItemPath": { "bindType": "parameter", "binding": "ns=1;s=[{DeviceName}]_Meta:Ramp/Ramp{Index}" },
+              "dataType": "Float8",
+              "engUnit": "rpm",
+              "engLow": 0,
+              "engHigh": 1500
+            },
+            {
+              "name": "Running",
+              "tagType": "AtomicTag",
+              "valueSource": "memory",
+              "dataType": "Boolean",
+              "value": false
+            },
+            {
+              "name": "Load",
+              "tagType": "AtomicTag",
+              "valueSource": "expr",
+              "dataType": "Float8",
+              "expression": "{[.]Speed} / 15"
+            }
+          ]
+        },
+        {
+          "name": "SmartMotor",
+          "tagType": "UdtType",
+          "typeId": "Motor",
+          "tags": [
+            {
+              "name": "Temperature",
+              "tagType": "AtomicTag",
+              "valueSource": "opc",
+              "opcServer": "Ignition OPC UA Server",
+              "opcItemPath": { "bindType": "parameter", "binding": "ns=1;s=[{DeviceName}]_Meta:Sine/Sine{Index}" },
+              "dataType": "Float8",
+              "engUnit": "degC"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Line1",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "name": "Speed",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "opcServer": "Ignition OPC UA Server",
+          "opcItemPath": "ns=1;s=[Sim]_Meta:Ramp/Ramp0",
+          "dataType": "Float8",
+          "engUnit": "rpm",
+          "engLow": 0,
+          "engHigh": 1500,
+          "documentation": "Line speed from the simulator",
+          "alarms": [
+            { "name": "Overspeed", "mode": "AboveValue", "setpointA": 1400, "priority": "High" }
+          ]
+        },
+        {
+          "name": "Setpoint",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "opcServer": "Ignition OPC UA Server",
+          "opcItemPath": "ns=1;s=[Sim]_Meta:Writeable/WriteableFloat1",
+          "dataType": "Float8",
+          "readOnly": false
+        },
+        {
+          "name": "Mode",
+          "tagType": "AtomicTag",
+          "valueSource": "memory",
+          "dataType": "Int4",
+          "value": 1
+        },
+        {
+          "name": "SpeedPct",
+          "tagType": "AtomicTag",
+          "valueSource": "expr",
+          "dataType": "Float8",
+          "expression": "{[.]Speed} / 15"
+        },
+        {
+          "name": "SpeedChanged",
+          "tagType": "AtomicTag",
+          "valueSource": "expr",
+          "dataType": "Boolean",
+          "expression": "hasChanged({[.]Speed})"
+        },
+        {
+          "name": "Scripted",
+          "tagType": "AtomicTag",
+          "valueSource": "expr",
+          "dataType": "Float8",
+          "expression": "runScript(\"project.calc.load\", 0, {[.]Speed})"
+        },
+        {
+          "name": "SpeedAlias",
+          "tagType": "AtomicTag",
+          "valueSource": "reference",
+          "dataType": "Float8",
+          "sourceTagPath": "[.]Speed"
+        },
+        {
+          "name": "SetpointScaled",
+          "tagType": "AtomicTag",
+          "valueSource": "derived",
+          "dataType": "Float8",
+          "sourceTagPath": "[.]Setpoint",
+          "deriveExpressionGetter": "{source} * 10",
+          "deriveExpressionSetter": "{value} / 10"
+        },
+        {
+          "name": "Batch",
+          "tagType": "AtomicTag",
+          "valueSource": "db",
+          "dataType": "String",
+          "datasource": "MES",
+          "queryType": "Select",
+          "query": "SELECT batch_id FROM batches WHERE line = 1 ORDER BY started DESC LIMIT 1"
+        },
+        {
+          "name": "Counter",
+          "tagType": "AtomicTag",
+          "valueSource": "memory",
+          "dataType": "Int4",
+          "value": 0,
+          "historyEnabled": true,
+          "eventScripts": [
+            {
+              "eventid": "valueChanged",
+              "script": "\tif currentValue.value > 1000:\n\t\tsystem.tag.writeBlocking([\"[.]Mode\"], [0])"
+            }
+          ]
+        },
+        {
+          "name": "Motor1",
+          "tagType": "UdtInstance",
+          "typeId": "Motor",
+          "parameters": {
+            "Index": { "dataType": "Integer", "value": 2 }
+          }
+        },
+        {
+          "name": "Motor2",
+          "tagType": "UdtInstance",
+          "typeId": "SmartMotor",
+          "parameters": {
+            "Index": { "dataType": "Integer", "value": 3 }
+          },
+          "tags": [
+            { "name": "Speed", "tagType": "AtomicTag", "engHigh": 1800 }
+          ]
+        }
+      ]
+    }
+  ]
+}

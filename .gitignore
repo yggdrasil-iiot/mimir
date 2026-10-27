@@ -1,3 +1,5 @@
 target/
 build/
 dependency-reduced-pom.xml
+
+ignition-lab/.env

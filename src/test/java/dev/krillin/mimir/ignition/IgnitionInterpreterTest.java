@@ -1,0 +1,211 @@
+package dev.krillin.mimir.ignition;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.jupiter.api.Test;
+
+import dev.krillin.mimir.interpretation.ContractViolation;
+import dev.krillin.mimir.interpretation.InterpretationContract;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class IgnitionInterpreterTest {
+
+    static final Path DEV1 = Path.of("fixtures/ignition/8.3.10/dev-1");
+    static final ObjectMapper M = new ObjectMapper();
+
+    static IgnitionDocuments.Set docs(byte[] export) {
+        return IgnitionDocuments.build("test/run", export, "export.json", "2026-10-27T00:00:00Z");
+    }
+
+    static JsonNode reparse(JsonNode n) throws Exception {
+        return InterpretationContract.parse(M.writeValueAsString(n));
+    }
+
+    static Set<String> rows(byte[] export, String cat) {
+        return AnswerKey.rows(AnswerKey.project(docs(export).snapshot()).get(cat), cat);
+    }
+
+    /** A provider export holding the given tags, written as Ignition writes them. */
+    static byte[] export(String tagsJson) {
+        return ("{\"name\":\"\",\"tagType\":\"Provider\",\"tags\":" + tagsJson + "}").getBytes(StandardCharsets.UTF_8);
+    }
+
+    @Test
+    void dev1MatchesItsAnswerKeyInEveryCategory() throws Exception {
+        byte[] export = Files.readAllBytes(DEV1.resolve("export.json"));
+        JsonNode key = M.readTree(Files.readString(DEV1.resolve("key.json")));
+        AnswerKey.Result r = AnswerKey.compare(key, AnswerKey.project(docs(export).snapshot()));
+        for (String cat : AnswerKey.CATEGORIES) {
+            AnswerKey.Score s = r.scores().get(cat);
+            assertEquals(s.expected(), s.matched(), cat + " missing " + r.missing().get(cat));
+            assertEquals(0, s.extra(), cat + " extra " + r.extra().get(cat));
+        }
+    }
+
+    @Test
+    void producedDocumentsPassTheContract() throws Exception {
+        IgnitionDocuments.Set d = docs(Files.readAllBytes(DEV1.resolve("export.json")));
+        assertDoesNotThrow(() -> InterpretationContract.checkPinned(reparse(d.snapshot()), reparse(d.bundle()), reparse(d.profile())));
+    }
+
+    @Test
+    void sameBytesGiveTheSameSnapshotDigest() throws Exception {
+        byte[] export = Files.readAllBytes(DEV1.resolve("export.json"));
+        assertEquals(docs(export).snapshot().get("digest"), docs(export).snapshot().get("digest"));
+    }
+
+    /** The gateway writes siblings in no fixed order (P0); the interpretation must not depend on it. */
+    @Test
+    void siblingOrderDoesNotChangeTheKey() throws Exception {
+        byte[] export = Files.readAllBytes(DEV1.resolve("export.json"));
+        JsonNode reversed = M.readTree(export);
+        reverseTags(reversed);
+        byte[] other = M.writeValueAsBytes(reversed);
+        for (String cat : AnswerKey.CATEGORIES) assertEquals(rows(export, cat), rows(other, cat), cat);
+    }
+
+    static void reverseTags(JsonNode n) {
+        if (n.has("tags") && n.get("tags").isArray()) {
+            ArrayNode tags = (ArrayNode) n.get("tags");
+            List<JsonNode> items = new ArrayList<>();
+            tags.forEach(items::add);
+            tags.removeAll();
+            for (int i = items.size() - 1; i >= 0; i--) {
+                reverseTags(items.get(i));
+                tags.add(items.get(i));
+            }
+        }
+    }
+
+    @Test
+    void braceInsideAQuotedStringIsNotAReference() {
+        Expressions.Parsed p = Expressions.parse("concat(\"{[.]NotATag}\", {[.]Real})");
+        assertEquals(List.of("[.]Real"), p.refs());
+    }
+
+    @Test
+    void expressionStateFollowsTheFunctionsItCalls() {
+        assertEquals("stateless", Expressions.state(Expressions.parse("if({[.]A} > 1, now(), 0)")).state());
+        assertEquals(List.of("edge-detect", "previous-value"), Expressions.state(Expressions.parse("hasChanged({[.]A})")).kinds());
+        assertEquals("unknown", Expressions.state(Expressions.parse("runScript(\"x\", 0)")).state());
+        assertEquals("unknown", Expressions.state(Expressions.parse("dateDiff(now(), {[.]T}, \"sec\")")).state());
+    }
+
+    @Test
+    void pathsResolveRelativeRootAndOtherProvider() {
+        byte[] export = export("""
+                [{"name":"A","tagType":"Folder","tags":[
+                  {"name":"B","tagType":"Folder","tags":[
+                    {"name":"X","tagType":"AtomicTag","valueSource":"expr","dataType":"Int4",
+                     "expression":"{[.]../Y} + {[~]A/Y} + {[default]A/Y} + {[.]../../../Z}"}]},
+                  {"name":"Y","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4"}]}]""");
+        Set<String> edges = rows(export, "edges");
+        assertTrue(edges.contains("a/b/x | a/y | input | read | resolved"), edges.toString());
+        assertTrue(edges.contains("a/b/x | [default]a/y | input | read | external-required"), edges.toString());
+        assertTrue(edges.stream().anyMatch(e -> e.startsWith("a/b/x | @unparsed/") && e.endsWith("unsupported")), edges.toString());
+    }
+
+    @Test
+    void absentTargetIsMissingAndPropertyReferenceBelongsToItsTag() {
+        byte[] export = export("""
+                [{"name":"T","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4"},
+                 {"name":"E","tagType":"AtomicTag","valueSource":"expr","dataType":"Int4","expression":"{[.]T.Quality} + {[.]Gone}"}]""");
+        Set<String> edges = rows(export, "edges");
+        assertTrue(edges.contains("e | t | input | read | resolved"), edges.toString());
+        assertTrue(edges.contains("e | gone | input | read | missing"), edges.toString());
+        assertTrue(rows(export, "unresolved").contains("e | missing"));
+    }
+
+    @Test
+    void undeclaredParameterLeavesTheItemPathUnresolved() {
+        byte[] export = export("""
+                [{"name":"_types_","tagType":"Folder","tags":[{"name":"M","tagType":"UdtType",
+                   "parameters":{"Dev":{"dataType":"String","value":"S"}},
+                   "tags":[{"name":"P","tagType":"AtomicTag","valueSource":"opc","dataType":"Float8","opcServer":"U",
+                            "opcItemPath":{"bindType":"parameter","binding":"[{Dev}]{Nope}"}}]}]},
+                 {"name":"I","tagType":"UdtInstance","typeId":"M"}]""");
+        Set<String> claims = rows(export, "claims");
+        assertTrue(claims.contains("i/p | opcItemPath.raw | \"[{Dev}]{Nope}\""), claims.toString());
+        assertFalse(claims.stream().anyMatch(c -> c.startsWith("i/p | opcItemPath.resolved")), claims.toString());
+        assertTrue(rows(export, "unresolved").contains("i/p | missing"));
+    }
+
+    @Test
+    void instanceOverridesWinAndInheritedMembersAreMaterialized() {
+        byte[] export = export("""
+                [{"name":"_types_","tagType":"Folder","tags":[{"name":"M","tagType":"UdtType",
+                   "tags":[{"name":"S","tagType":"AtomicTag","valueSource":"memory","dataType":"Float8","engHigh":10.0},
+                           {"name":"R","tagType":"AtomicTag","valueSource":"memory","dataType":"Boolean"}]}]},
+                 {"name":"I","tagType":"UdtInstance","typeId":"M","tags":[{"name":"S","engHigh":12.5}]}]""");
+        Set<String> claims = rows(export, "claims");
+        assertTrue(claims.contains("i/s | engHigh | \"12.5\""), claims.toString());
+        assertTrue(claims.contains("_types_/m/s | engHigh | 10"), claims.toString());
+        assertTrue(rows(export, "nodes").contains("i/r | tag | - | -"));
+        assertTrue(rows(export, "edges").contains("i | _types_/m | inherits | read | resolved"));
+    }
+
+    @Test
+    void referenceTagWritesThroughUnlessReadOnly() {
+        byte[] export = export("""
+                [{"name":"S","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4"},
+                 {"name":"R","tagType":"AtomicTag","valueSource":"reference","sourceTagPath":"[.]S"},
+                 {"name":"Q","tagType":"AtomicTag","valueSource":"reference","sourceTagPath":"[.]S","readOnly":true}]""");
+        Set<String> edges = rows(export, "edges");
+        assertTrue(edges.contains("r | s | reference | write | resolved"));
+        assertTrue(edges.contains("q | s | reference | read | resolved"));
+        assertFalse(edges.contains("q | s | reference | write | resolved"));
+    }
+
+    @Test
+    void scriptTargetsAreReadStaticallyAndDynamicOnesAreUnsupported() {
+        byte[] export = export("""
+                [{"name":"A","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4"},
+                 {"name":"B","tagType":"AtomicTag","valueSource":"memory","dataType":"Int4","eventScripts":[{"eventid":"valueChanged",
+                   "script":"\\tsystem.tag.writeBlocking([\\"[.]A\\"], [1])\\n\\tp = '[.]A'\\n\\tsystem.tag.readBlocking([p])"}]}]""");
+        Set<String> edges = rows(export, "edges");
+        assertTrue(edges.contains("b#event/valuechanged | a | reference | write | resolved"), edges.toString());
+        assertTrue(edges.contains("b#event/valuechanged | b | input | event | resolved"), edges.toString());
+        assertTrue(rows(export, "unresolved").contains("b#event/valuechanged | unsupported"));
+    }
+
+    @Test
+    void duplicateKeysAndCaseCollidingSiblingsAreRefused() {
+        assertThrows(ContractViolation.class, () -> IgnitionInterpreter.interpret("export",
+                "{\"name\":\"\",\"name\":\"x\",\"tagType\":\"Provider\",\"tags\":[]}".getBytes(StandardCharsets.UTF_8)));
+        assertThrows(ContractViolation.class, () -> IgnitionInterpreter.interpret("export", export("""
+                [{"name":"T","tagType":"AtomicTag","valueSource":"memory"},{"name":"t","tagType":"AtomicTag","valueSource":"memory"}]""")));
+    }
+
+    @Test
+    void decimalsTravelAsCanonicalStrings() {
+        assertEquals("0.1", IgnitionInterpreter.scalar(M.getNodeFactory().numberNode(new java.math.BigDecimal("1e-1"))).asText());
+        assertEquals(1500L, IgnitionInterpreter.scalar(M.getNodeFactory().numberNode(new java.math.BigDecimal("1500.0"))).asLong());
+        assertTrue(IgnitionInterpreter.scalar(M.getNodeFactory().numberNode(new java.math.BigDecimal("1500.0"))).isIntegralNumber());
+    }
+
+    @Test
+    void scoringCountsMissingAndExtraRows() {
+        ObjectNode exp = M.createObjectNode();
+        exp.putArray("nodes").addObject().put("locator", "A").put("kind", "tag");
+        ObjectNode act = M.createObjectNode();
+        ArrayNode n = act.putArray("nodes");
+        n.addObject().put("locator", "a").put("kind", "tag");
+        n.addObject().put("locator", "b").put("kind", "tag");
+        AnswerKey.Score s = AnswerKey.compare(exp, act).scores().get("nodes");
+        assertEquals(new AnswerKey.Score(1, 1, 0, 1), s);
+    }
+}

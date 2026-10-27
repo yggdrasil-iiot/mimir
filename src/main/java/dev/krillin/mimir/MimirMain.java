@@ -20,6 +20,9 @@ import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 public final class MimirMain {
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 0 && args[0].startsWith("ignition-")) {
+            System.exit(IgnitionCli.run(args));
+        }
         if (args.length == 0 || !"derive".equals(args[0])) {
             usage();
             System.exit(2);
