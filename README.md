@@ -5,12 +5,12 @@ Mimir (Mímir) — the northbound **modeler** of the Yggdrasil IIoT governance p
 ## Role in the governance spine
 
 ```
-                ┌─▶ Bifrost (govern) ─▶ Muninn (feed the UNS)    UDT definitions — built
-Mimir (read) ───┼─▶ Tyr (author mappings) ─▶ Bifrost (govern)    vendor snapshots — planned
-                └─▶ Bifrost (reconcile governed vs current)      vendor snapshots — planned
+                ┌─▶ Bifrost (govern) ─▶ Muninn (feed the UNS)    OPC-UA UDT derivation — built
+Mimir (read) ───┼─▶ Tyr (author mappings) ─▶ Bifrost (govern)    Ignition snapshots — built; Tyr reads 1.0.0 only
+                └─▶ Bifrost (reconcile governed vs current)      reconciliation — planned
 ```
 
-One reader per input format: a source the plant already runs is interpreted here and nowhere else, and the other apps consume what Mimir publishes. Vendor tag configurations are the next such source; that work is planned, not built — see [the design note](docs/VENDOR-INTERPRETATION.md).
+One reader per input format: a source the plant already runs is interpreted here and nowhere else, and the other apps consume what Mimir publishes. The first vendor interpreter is built: Ignition 8.3.10 REST `tags/export` JSON, offline input; interpretation snapshot contract 1.1.0, namespace `ignition83`, rule version 1.2.0, interpreter 0.3.0. Tyr (Týr) reads 1.0.0 snapshots only, and Bifrost reconciliation is not built. See [the design note](docs/VENDOR-INTERPRETATION.md).
 
 Mimir is the *production* layer of canonical-model ownership; **Bifrost remains the authority** (it admits, versions, and is the registry-of-record). Mimir only proposes — a derived definition is not canonical until Bifrost's gate governs it. Concretely, Mimir:
 
@@ -30,9 +30,19 @@ mvn install        # Java 17; shades an executable target/mimir.jar
 # Browse a live OPC-UA type node and derive a canonical definition to <outFile>
 java -jar target/mimir.jar derive <endpoint> <nsUri> <typeBrowseName> <templateRef> <version> <outFile> \
      [--omit <member>]
+
+# Interpret an Ignition 8.3.10 tag export and write snapshot documents to <outDir>
+java -jar target/mimir.jar ignition-interpret <export.json> <name> <outDir>
+
+# Score an Ignition 8.3.10 tag export against an evaluation key
+java -jar target/mimir.jar ignition-score <export.json> <key.json> [--details]
 ```
 
 `--omit <member>` deliberately drops a member (a test hook for exercising Bifrost's breaking-change rejection — `member.removed`), never used on the faithful derive path.
+
+`ignition-interpret` validates contracts and pins, enforces profile limits (refusing exports exceeding 16 MiB, 100,000 nodes, or folder/UDT depth 64 with `ignition.limit-exceeded`), and writes `source-bundle.json`, `interpretation-profile.json`, and `interpretation-snapshot.json`. The export file's modification time is recorded as the acquisition timestamp.
+
+`ignition-score` validates the generated documents, compares them with an answer key, and prints expected/matched/missing/extra counts with recall and precision per category. `--details` displays individual mismatch rows.
 
 ## Acceptance gate
 
@@ -40,9 +50,11 @@ java -jar target/mimir.jar derive <endpoint> <nsUri> <typeBrowseName> <templateR
 
 ## Honest scope
 
-- Design-time and low-frequency — once per type for OPC-UA derivation, and once per handed-over configuration snapshot for vendor interpretation, which is planned — and not a runtime data path.
+- Design-time and low-frequency — once per type for OPC-UA derivation, and once per handed-over configuration snapshot for vendor interpretation — and not a runtime data path.
 - The OPC-UA DataType is reconstituted to the exact string vocabulary Bifrost's gate expects (`11→"Double"`, `1→"Boolean"`); `semanticId` is synthesized from a local-IRI convention (the type node carries none). The synthesized local IRI is a placeholder, not a pointer to an entry in the enterprise semantic dictionary; that dictionary sits outside Yggdrasil; linking a `semanticId` to a dictionary entry is not built.
 - `range=null` (an unconstrained numeric) is indistinguishable from any other unconstrained numeric on the type node — deny/constraint semantics live on the spec side, not the equipment type.
+- Vendor interpretation operates offline and at design time, processing one tag export per invocation. It interprets folders, UDT inheritance, overrides, parameters, tag sources (OPC, memory, expression, reference, derived, and database), dependencies with read/write/event access, alarm configuration, event-script targets, and expression-state classifications into interpretation snapshot contract 1.1.0.
+- Expressions, scripts, and SQL are parsed and classified as static configuration rather than executed, maintaining a design-time, read-only boundary. Detailed evaluation metrics and mapping specifications are in [the design note](docs/VENDOR-INTERPRETATION.md).
 
 ## Dependencies
 

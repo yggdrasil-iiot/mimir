@@ -60,4 +60,4 @@
 
 ## Exclusions
 
-**Not included: any interpreter or parser; any real product sample.**
+The contract package itself includes no interpreter and no real product sample. The Ignition interpreter lives in `src/main/java/dev/krillin/mimir/ignition/`, and its specification and dev-1 export and key live in `fixtures/ignition/`.

@@ -2,3 +2,7 @@
 # pinned by SHA-256. A line-ending conversion would change those bytes.
 contracts/** -text
 fixtures/interpretation/** -text
+# Exports and answer keys are pinned by SHA-256: keep their bytes exactly as written.
+ignition-lab/exports/** -text
+ignition-lab/scenarios/** -text
+fixtures/ignition/** -text

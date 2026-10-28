@@ -1,0 +1,31 @@
+[
+  {
+    "name": "Motor1",
+    "parameters": {
+      "Index": {
+        "dataType": "Integer",
+        "value": 2
+      }
+    },
+    "tagType": "UdtInstance",
+    "typeId": "Motor"
+  },
+  {
+    "name": "Motor2",
+    "parameters": {
+      "Index": {
+        "dataType": "Integer",
+        "value": 3
+      }
+    },
+    "tagType": "UdtInstance",
+    "typeId": "SmartMotor",
+    "tags": [
+      {
+        "engHigh": 1800.0,
+        "name": "Speed",
+        "tagType": "AtomicTag"
+      }
+    ]
+  }
+]

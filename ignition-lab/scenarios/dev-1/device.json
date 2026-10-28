@@ -1,0 +1,13 @@
+[
+  {
+    "name": "Sim",
+    "collection": "core",
+    "enabled": true,
+    "description": "Generic simulator for the dev-1 scenario",
+    "config": {
+      "profile": {
+        "type": "Simulator"
+      }
+    }
+  }
+]
