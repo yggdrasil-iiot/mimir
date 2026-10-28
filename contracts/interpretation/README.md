@@ -2,7 +2,7 @@
 
 ## Purpose
 
-**This is the file contract through which Mímir publishes what it read from a vendor configuration.** Mímir owns these schemas; consumers (Týr, and Bifrost for reconciliation) bundle a byte-identical copy. There is no shared code. The design and the single-reader decision are in `docs/VENDOR-INTERPRETATION.md`.
+**This is the file contract through which Mímir publishes what it read from a vendor configuration.** Mimir owns these schemas, and Tyr bundles a byte-identical copy under `tyr/vendor-contracts/mimir/interpretation/` with no shared code. Bifrost reading the snapshot for reconciliation is planned—a decision documented in Bifrost `docs/INTEGRATION.md` that is not yet in code. The design and the single-reader decision are in `docs/VENDOR-INTERPRETATION.md`.
 
 ## Schemas
 
