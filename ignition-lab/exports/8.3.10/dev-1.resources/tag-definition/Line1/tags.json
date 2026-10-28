@@ -1,0 +1,98 @@
+[
+  {
+    "dataType": "String",
+    "datasource": "MES",
+    "name": "Batch",
+    "query": "SELECT batch_id FROM batches WHERE line \u003d 1 ORDER BY started DESC LIMIT 1",
+    "queryType": "Select",
+    "tagType": "AtomicTag",
+    "valueSource": "db"
+  },
+  {
+    "dataType": "Int4",
+    "defaultValue": 0,
+    "eventScripts": [
+      {
+        "eventid": "valueChanged",
+        "script": "\tif currentValue.value \u003e 1000:\n\t\tsystem.tag.writeBlocking([\"[.]Mode\"], [0])"
+      }
+    ],
+    "historyEnabled": true,
+    "name": "Counter",
+    "tagType": "AtomicTag",
+    "valueSource": "memory"
+  },
+  {
+    "dataType": "Int4",
+    "defaultValue": 1,
+    "name": "Mode",
+    "tagType": "AtomicTag",
+    "valueSource": "memory"
+  },
+  {
+    "dataType": "Float8",
+    "expression": "runScript(\"project.calc.load\", 0, {[.]Speed})",
+    "name": "Scripted",
+    "tagType": "AtomicTag",
+    "valueSource": "expr"
+  },
+  {
+    "dataType": "Float8",
+    "name": "Setpoint",
+    "opcItemPath": "ns\u003d1;s\u003d[Sim]_Meta:Writeable/WriteableFloat1",
+    "opcServer": "Ignition OPC UA Server",
+    "readOnly": false,
+    "tagType": "AtomicTag",
+    "valueSource": "opc"
+  },
+  {
+    "dataType": "Float8",
+    "deriveExpressionGetter": "{source} * 10",
+    "deriveExpressionSetter": "{value} / 10",
+    "name": "SetpointScaled",
+    "sourceTagPath": "[.]Setpoint",
+    "tagType": "AtomicTag",
+    "valueSource": "derived"
+  },
+  {
+    "alarms": [
+      {
+        "mode": "AboveValue",
+        "name": "Overspeed",
+        "priority": "High",
+        "setpointA": 1400.0
+      }
+    ],
+    "dataType": "Float8",
+    "documentation": "Line speed from the simulator",
+    "engHigh": 1500.0,
+    "engLow": 0.0,
+    "engUnit": "rpm",
+    "name": "Speed",
+    "opcItemPath": "ns\u003d1;s\u003d[Sim]_Meta:Ramp/Ramp0",
+    "opcServer": "Ignition OPC UA Server",
+    "tagType": "AtomicTag",
+    "valueSource": "opc"
+  },
+  {
+    "dataType": "Float8",
+    "name": "SpeedAlias",
+    "sourceTagPath": "[.]Speed",
+    "tagType": "AtomicTag",
+    "valueSource": "reference"
+  },
+  {
+    "dataType": "Boolean",
+    "expression": "hasChanged({[.]Speed})",
+    "name": "SpeedChanged",
+    "tagType": "AtomicTag",
+    "valueSource": "expr"
+  },
+  {
+    "dataType": "Float8",
+    "expression": "{[.]Speed} / 15",
+    "name": "SpeedPct",
+    "tagType": "AtomicTag",
+    "valueSource": "expr"
+  }
+]

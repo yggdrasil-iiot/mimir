@@ -1,0 +1,1291 @@
+{
+  "formatVersion": "1.0.0",
+  "specVersion": "1.0.0",
+  "artifact": "dev-1/export.json",
+  "sha256": "cf4dc711d29c5081871f66d0ed7aa2576a17ed25a2fb7b58bc45e14203c8880b",
+  "nodes": [
+    {
+      "locator": "Line1",
+      "kind": "group"
+    },
+    {
+      "locator": "Line1/Batch",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/Counter",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/Counter#event/valueChanged",
+      "kind": "opaque",
+      "state": "unknown"
+    },
+    {
+      "locator": "Line1/Mode",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/Motor1",
+      "kind": "group"
+    },
+    {
+      "locator": "Line1/Motor1/Load",
+      "kind": "operation",
+      "state": "stateless"
+    },
+    {
+      "locator": "Line1/Motor1/Running",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/Motor2",
+      "kind": "group"
+    },
+    {
+      "locator": "Line1/Motor2/Load",
+      "kind": "operation",
+      "state": "stateless"
+    },
+    {
+      "locator": "Line1/Motor2/Running",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/Motor2/Temperature",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/Scripted",
+      "kind": "operation",
+      "state": "unknown"
+    },
+    {
+      "locator": "Line1/Setpoint",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/SetpointScaled",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/Speed",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/Speed#alarm/Overspeed",
+      "kind": "policy"
+    },
+    {
+      "locator": "Line1/SpeedAlias",
+      "kind": "tag"
+    },
+    {
+      "locator": "Line1/SpeedChanged",
+      "kind": "operation",
+      "state": "stateful",
+      "stateKinds": [
+        "edge-detect",
+        "previous-value"
+      ]
+    },
+    {
+      "locator": "Line1/SpeedPct",
+      "kind": "operation",
+      "state": "stateless"
+    },
+    {
+      "locator": "_types_",
+      "kind": "group"
+    },
+    {
+      "locator": "_types_/Motor",
+      "kind": "group"
+    },
+    {
+      "locator": "_types_/Motor/Load",
+      "kind": "operation",
+      "state": "stateless"
+    },
+    {
+      "locator": "_types_/Motor/Running",
+      "kind": "tag"
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "kind": "tag"
+    },
+    {
+      "locator": "_types_/SmartMotor",
+      "kind": "group"
+    },
+    {
+      "locator": "_types_/SmartMotor/Load",
+      "kind": "operation",
+      "state": "stateless"
+    },
+    {
+      "locator": "_types_/SmartMotor/Running",
+      "kind": "tag"
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "kind": "tag"
+    },
+    {
+      "locator": "_types_/SmartMotor/Temperature",
+      "kind": "tag"
+    },
+    {
+      "locator": "@external/db/MES",
+      "kind": "connection"
+    },
+    {
+      "locator": "@external/opc/Ignition OPC UA Server",
+      "kind": "connection"
+    }
+  ],
+  "edges": [
+    {
+      "from": "Line1",
+      "to": "Line1/Batch",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/Counter",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/Mode",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/Motor1",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/Motor2",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/Scripted",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/Setpoint",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/SetpointScaled",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/Speed",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/SpeedAlias",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/SpeedChanged",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1",
+      "to": "Line1/SpeedPct",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Counter",
+      "to": "Line1/Counter#event/valueChanged",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor1",
+      "to": "Line1/Motor1/Load",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor1",
+      "to": "Line1/Motor1/Running",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor1",
+      "to": "Line1/Motor1/Speed",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor2",
+      "to": "Line1/Motor2/Load",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor2",
+      "to": "Line1/Motor2/Running",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor2",
+      "to": "Line1/Motor2/Speed",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor2",
+      "to": "Line1/Motor2/Temperature",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Speed",
+      "to": "Line1/Speed#alarm/Overspeed",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_",
+      "to": "_types_/Motor",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_",
+      "to": "_types_/SmartMotor",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_/Motor",
+      "to": "_types_/Motor/Load",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_/Motor",
+      "to": "_types_/Motor/Running",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_/Motor",
+      "to": "_types_/Motor/Speed",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_/SmartMotor",
+      "to": "_types_/SmartMotor/Load",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_/SmartMotor",
+      "to": "_types_/SmartMotor/Running",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_/SmartMotor",
+      "to": "_types_/SmartMotor/Speed",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_/SmartMotor",
+      "to": "_types_/SmartMotor/Temperature",
+      "relation": "contains",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor1",
+      "to": "_types_/Motor",
+      "relation": "inherits",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor2",
+      "to": "_types_/SmartMotor",
+      "relation": "inherits",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_/SmartMotor",
+      "to": "_types_/Motor",
+      "relation": "inherits",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor1/Load",
+      "to": "Line1/Motor1/Speed",
+      "relation": "input",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Motor2/Load",
+      "to": "Line1/Motor2/Speed",
+      "relation": "input",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_/Motor/Load",
+      "to": "_types_/Motor/Speed",
+      "relation": "input",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "_types_/SmartMotor/Load",
+      "to": "_types_/SmartMotor/Speed",
+      "relation": "input",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Scripted",
+      "to": "Line1/Speed",
+      "relation": "input",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/SpeedChanged",
+      "to": "Line1/Speed",
+      "relation": "input",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/SpeedPct",
+      "to": "Line1/Speed",
+      "relation": "input",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/SpeedAlias",
+      "to": "Line1/Speed",
+      "relation": "reference",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/SpeedAlias",
+      "to": "Line1/Speed",
+      "relation": "reference",
+      "access": "write",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/SetpointScaled",
+      "to": "Line1/Setpoint",
+      "relation": "reference",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/SetpointScaled",
+      "to": "Line1/Setpoint",
+      "relation": "reference",
+      "access": "write",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Counter#event/valueChanged",
+      "to": "Line1/Counter",
+      "relation": "input",
+      "access": "event",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Counter#event/valueChanged",
+      "to": "Line1/Mode",
+      "relation": "reference",
+      "access": "write",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Speed#alarm/Overspeed",
+      "to": "Line1/Speed",
+      "relation": "policy",
+      "access": "read",
+      "resolution": "resolved"
+    },
+    {
+      "from": "Line1/Batch",
+      "to": "@external/db/MES",
+      "relation": "external",
+      "access": "read",
+      "resolution": "external-required"
+    },
+    {
+      "from": "Line1/Setpoint",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "read",
+      "resolution": "external-required"
+    },
+    {
+      "from": "Line1/Setpoint",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "write",
+      "resolution": "external-required"
+    },
+    {
+      "from": "Line1/Speed",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "read",
+      "resolution": "external-required"
+    },
+    {
+      "from": "Line1/Speed",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "write",
+      "resolution": "external-required"
+    },
+    {
+      "from": "Line1/Motor1/Speed",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "read",
+      "resolution": "external-required"
+    },
+    {
+      "from": "Line1/Motor1/Speed",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "write",
+      "resolution": "external-required"
+    },
+    {
+      "from": "Line1/Motor2/Speed",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "read",
+      "resolution": "external-required"
+    },
+    {
+      "from": "Line1/Motor2/Speed",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "write",
+      "resolution": "external-required"
+    },
+    {
+      "from": "Line1/Motor2/Temperature",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "read",
+      "resolution": "external-required"
+    },
+    {
+      "from": "Line1/Motor2/Temperature",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "write",
+      "resolution": "external-required"
+    },
+    {
+      "from": "_types_/Motor/Speed",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "read",
+      "resolution": "external-required"
+    },
+    {
+      "from": "_types_/Motor/Speed",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "write",
+      "resolution": "external-required"
+    },
+    {
+      "from": "_types_/SmartMotor/Speed",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "read",
+      "resolution": "external-required"
+    },
+    {
+      "from": "_types_/SmartMotor/Speed",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "write",
+      "resolution": "external-required"
+    },
+    {
+      "from": "_types_/SmartMotor/Temperature",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "read",
+      "resolution": "external-required"
+    },
+    {
+      "from": "_types_/SmartMotor/Temperature",
+      "to": "@external/opc/Ignition OPC UA Server",
+      "relation": "external",
+      "access": "write",
+      "resolution": "external-required"
+    }
+  ],
+  "claims": [
+    {
+      "locator": "Line1/Batch",
+      "field": "dataType",
+      "value": "String"
+    },
+    {
+      "locator": "Line1/Batch",
+      "field": "valueSource",
+      "value": "db"
+    },
+    {
+      "locator": "Line1/Batch",
+      "field": "datasource",
+      "value": "MES"
+    },
+    {
+      "locator": "Line1/Batch",
+      "field": "queryType",
+      "value": "Select"
+    },
+    {
+      "locator": "Line1/Batch",
+      "field": "query",
+      "value": "SELECT batch_id FROM batches WHERE line = 1 ORDER BY started DESC LIMIT 1"
+    },
+    {
+      "locator": "Line1/Counter",
+      "field": "dataType",
+      "value": "Int4"
+    },
+    {
+      "locator": "Line1/Counter",
+      "field": "valueSource",
+      "value": "memory"
+    },
+    {
+      "locator": "Line1/Counter",
+      "field": "historyEnabled",
+      "value": true
+    },
+    {
+      "locator": "Line1/Mode",
+      "field": "dataType",
+      "value": "Int4"
+    },
+    {
+      "locator": "Line1/Mode",
+      "field": "valueSource",
+      "value": "memory"
+    },
+    {
+      "locator": "Line1/Motor1",
+      "field": "tagType",
+      "value": "UdtInstance"
+    },
+    {
+      "locator": "Line1/Motor1",
+      "field": "parameters.DeviceName",
+      "value": "Sim"
+    },
+    {
+      "locator": "Line1/Motor1",
+      "field": "parameters.Index",
+      "value": 2
+    },
+    {
+      "locator": "Line1/Motor1/Load",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/Motor1/Load",
+      "field": "valueSource",
+      "value": "expr"
+    },
+    {
+      "locator": "Line1/Motor1/Load",
+      "field": "expression",
+      "value": "{[.]Speed} / 15"
+    },
+    {
+      "locator": "Line1/Motor1/Load",
+      "field": "state",
+      "value": "stateless"
+    },
+    {
+      "locator": "Line1/Motor1/Running",
+      "field": "dataType",
+      "value": "Boolean"
+    },
+    {
+      "locator": "Line1/Motor1/Running",
+      "field": "valueSource",
+      "value": "memory"
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "field": "valueSource",
+      "value": "opc"
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "field": "engUnit",
+      "value": "rpm"
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "field": "engLow",
+      "value": 0
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "field": "engHigh",
+      "value": 1500
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "field": "opcServer",
+      "value": "Ignition OPC UA Server"
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "field": "opcItemPath.raw",
+      "value": "ns=1;s=[{DeviceName}]_Meta:Ramp/Ramp{Index}"
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "field": "opcItemPath.bindType",
+      "value": "parameter"
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "field": "opcItemPath.resolved",
+      "value": "ns=1;s=[Sim]_Meta:Ramp/Ramp2"
+    },
+    {
+      "locator": "Line1/Motor2",
+      "field": "tagType",
+      "value": "UdtInstance"
+    },
+    {
+      "locator": "Line1/Motor2",
+      "field": "parameters.DeviceName",
+      "value": "Sim"
+    },
+    {
+      "locator": "Line1/Motor2",
+      "field": "parameters.Index",
+      "value": 3
+    },
+    {
+      "locator": "Line1/Motor2/Load",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/Motor2/Load",
+      "field": "valueSource",
+      "value": "expr"
+    },
+    {
+      "locator": "Line1/Motor2/Load",
+      "field": "expression",
+      "value": "{[.]Speed} / 15"
+    },
+    {
+      "locator": "Line1/Motor2/Load",
+      "field": "state",
+      "value": "stateless"
+    },
+    {
+      "locator": "Line1/Motor2/Running",
+      "field": "dataType",
+      "value": "Boolean"
+    },
+    {
+      "locator": "Line1/Motor2/Running",
+      "field": "valueSource",
+      "value": "memory"
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "field": "valueSource",
+      "value": "opc"
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "field": "engUnit",
+      "value": "rpm"
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "field": "engLow",
+      "value": 0
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "field": "engHigh",
+      "value": 1800
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "field": "opcServer",
+      "value": "Ignition OPC UA Server"
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "field": "opcItemPath.raw",
+      "value": "ns=1;s=[{DeviceName}]_Meta:Ramp/Ramp{Index}"
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "field": "opcItemPath.bindType",
+      "value": "parameter"
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "field": "opcItemPath.resolved",
+      "value": "ns=1;s=[Sim]_Meta:Ramp/Ramp3"
+    },
+    {
+      "locator": "Line1/Motor2/Temperature",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/Motor2/Temperature",
+      "field": "valueSource",
+      "value": "opc"
+    },
+    {
+      "locator": "Line1/Motor2/Temperature",
+      "field": "engUnit",
+      "value": "degC"
+    },
+    {
+      "locator": "Line1/Motor2/Temperature",
+      "field": "opcServer",
+      "value": "Ignition OPC UA Server"
+    },
+    {
+      "locator": "Line1/Motor2/Temperature",
+      "field": "opcItemPath.raw",
+      "value": "ns=1;s=[{DeviceName}]_Meta:Sine/Sine{Index}"
+    },
+    {
+      "locator": "Line1/Motor2/Temperature",
+      "field": "opcItemPath.bindType",
+      "value": "parameter"
+    },
+    {
+      "locator": "Line1/Motor2/Temperature",
+      "field": "opcItemPath.resolved",
+      "value": "ns=1;s=[Sim]_Meta:Sine/Sine3"
+    },
+    {
+      "locator": "Line1/Scripted",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/Scripted",
+      "field": "valueSource",
+      "value": "expr"
+    },
+    {
+      "locator": "Line1/Scripted",
+      "field": "expression",
+      "value": "runScript(\"project.calc.load\", 0, {[.]Speed})"
+    },
+    {
+      "locator": "Line1/Setpoint",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/Setpoint",
+      "field": "valueSource",
+      "value": "opc"
+    },
+    {
+      "locator": "Line1/Setpoint",
+      "field": "opcServer",
+      "value": "Ignition OPC UA Server"
+    },
+    {
+      "locator": "Line1/Setpoint",
+      "field": "opcItemPath.raw",
+      "value": "ns=1;s=[Sim]_Meta:Writeable/WriteableFloat1"
+    },
+    {
+      "locator": "Line1/Setpoint",
+      "field": "readOnly",
+      "value": false
+    },
+    {
+      "locator": "Line1/SetpointScaled",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/SetpointScaled",
+      "field": "valueSource",
+      "value": "derived"
+    },
+    {
+      "locator": "Line1/SetpointScaled",
+      "field": "sourceTagPath",
+      "value": "[.]Setpoint"
+    },
+    {
+      "locator": "Line1/SetpointScaled",
+      "field": "deriveExpressionGetter",
+      "value": "{source} * 10"
+    },
+    {
+      "locator": "Line1/SetpointScaled",
+      "field": "deriveExpressionSetter",
+      "value": "{value} / 10"
+    },
+    {
+      "locator": "Line1/Speed",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/Speed",
+      "field": "valueSource",
+      "value": "opc"
+    },
+    {
+      "locator": "Line1/Speed",
+      "field": "engUnit",
+      "value": "rpm"
+    },
+    {
+      "locator": "Line1/Speed",
+      "field": "engLow",
+      "value": 0
+    },
+    {
+      "locator": "Line1/Speed",
+      "field": "engHigh",
+      "value": 1500
+    },
+    {
+      "locator": "Line1/Speed",
+      "field": "documentation",
+      "value": "Line speed from the simulator"
+    },
+    {
+      "locator": "Line1/Speed",
+      "field": "opcServer",
+      "value": "Ignition OPC UA Server"
+    },
+    {
+      "locator": "Line1/Speed",
+      "field": "opcItemPath.raw",
+      "value": "ns=1;s=[Sim]_Meta:Ramp/Ramp0"
+    },
+    {
+      "locator": "Line1/Speed#alarm/Overspeed",
+      "field": "mode",
+      "value": "AboveValue"
+    },
+    {
+      "locator": "Line1/Speed#alarm/Overspeed",
+      "field": "priority",
+      "value": "High"
+    },
+    {
+      "locator": "Line1/Speed#alarm/Overspeed",
+      "field": "setpointA",
+      "value": 1400
+    },
+    {
+      "locator": "Line1/SpeedAlias",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/SpeedAlias",
+      "field": "valueSource",
+      "value": "reference"
+    },
+    {
+      "locator": "Line1/SpeedAlias",
+      "field": "sourceTagPath",
+      "value": "[.]Speed"
+    },
+    {
+      "locator": "Line1/SpeedChanged",
+      "field": "dataType",
+      "value": "Boolean"
+    },
+    {
+      "locator": "Line1/SpeedChanged",
+      "field": "valueSource",
+      "value": "expr"
+    },
+    {
+      "locator": "Line1/SpeedChanged",
+      "field": "expression",
+      "value": "hasChanged({[.]Speed})"
+    },
+    {
+      "locator": "Line1/SpeedChanged",
+      "field": "state",
+      "value": "stateful"
+    },
+    {
+      "locator": "Line1/SpeedPct",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "Line1/SpeedPct",
+      "field": "valueSource",
+      "value": "expr"
+    },
+    {
+      "locator": "Line1/SpeedPct",
+      "field": "expression",
+      "value": "{[.]Speed} / 15"
+    },
+    {
+      "locator": "Line1/SpeedPct",
+      "field": "state",
+      "value": "stateless"
+    },
+    {
+      "locator": "_types_/Motor",
+      "field": "tagType",
+      "value": "UdtType"
+    },
+    {
+      "locator": "_types_/Motor",
+      "field": "parameters.DeviceName",
+      "value": "Sim"
+    },
+    {
+      "locator": "_types_/Motor",
+      "field": "parameters.Index",
+      "value": 1
+    },
+    {
+      "locator": "_types_/Motor/Load",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "_types_/Motor/Load",
+      "field": "valueSource",
+      "value": "expr"
+    },
+    {
+      "locator": "_types_/Motor/Load",
+      "field": "expression",
+      "value": "{[.]Speed} / 15"
+    },
+    {
+      "locator": "_types_/Motor/Load",
+      "field": "state",
+      "value": "stateless"
+    },
+    {
+      "locator": "_types_/Motor/Running",
+      "field": "dataType",
+      "value": "Boolean"
+    },
+    {
+      "locator": "_types_/Motor/Running",
+      "field": "valueSource",
+      "value": "memory"
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "field": "valueSource",
+      "value": "opc"
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "field": "engUnit",
+      "value": "rpm"
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "field": "engLow",
+      "value": 0
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "field": "engHigh",
+      "value": 1500
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "field": "opcServer",
+      "value": "Ignition OPC UA Server"
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "field": "opcItemPath.raw",
+      "value": "ns=1;s=[{DeviceName}]_Meta:Ramp/Ramp{Index}"
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "field": "opcItemPath.bindType",
+      "value": "parameter"
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "field": "opcItemPath.resolved",
+      "value": "ns=1;s=[Sim]_Meta:Ramp/Ramp1"
+    },
+    {
+      "locator": "_types_/SmartMotor",
+      "field": "tagType",
+      "value": "UdtType"
+    },
+    {
+      "locator": "_types_/SmartMotor",
+      "field": "parameters.DeviceName",
+      "value": "Sim"
+    },
+    {
+      "locator": "_types_/SmartMotor",
+      "field": "parameters.Index",
+      "value": 1
+    },
+    {
+      "locator": "_types_/SmartMotor/Load",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "_types_/SmartMotor/Load",
+      "field": "valueSource",
+      "value": "expr"
+    },
+    {
+      "locator": "_types_/SmartMotor/Load",
+      "field": "expression",
+      "value": "{[.]Speed} / 15"
+    },
+    {
+      "locator": "_types_/SmartMotor/Load",
+      "field": "state",
+      "value": "stateless"
+    },
+    {
+      "locator": "_types_/SmartMotor/Running",
+      "field": "dataType",
+      "value": "Boolean"
+    },
+    {
+      "locator": "_types_/SmartMotor/Running",
+      "field": "valueSource",
+      "value": "memory"
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "field": "valueSource",
+      "value": "opc"
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "field": "engUnit",
+      "value": "rpm"
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "field": "engLow",
+      "value": 0
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "field": "engHigh",
+      "value": 1500
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "field": "opcServer",
+      "value": "Ignition OPC UA Server"
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "field": "opcItemPath.raw",
+      "value": "ns=1;s=[{DeviceName}]_Meta:Ramp/Ramp{Index}"
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "field": "opcItemPath.bindType",
+      "value": "parameter"
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "field": "opcItemPath.resolved",
+      "value": "ns=1;s=[Sim]_Meta:Ramp/Ramp1"
+    },
+    {
+      "locator": "_types_/SmartMotor/Temperature",
+      "field": "dataType",
+      "value": "Float8"
+    },
+    {
+      "locator": "_types_/SmartMotor/Temperature",
+      "field": "valueSource",
+      "value": "opc"
+    },
+    {
+      "locator": "_types_/SmartMotor/Temperature",
+      "field": "engUnit",
+      "value": "degC"
+    },
+    {
+      "locator": "_types_/SmartMotor/Temperature",
+      "field": "opcServer",
+      "value": "Ignition OPC UA Server"
+    },
+    {
+      "locator": "_types_/SmartMotor/Temperature",
+      "field": "opcItemPath.raw",
+      "value": "ns=1;s=[{DeviceName}]_Meta:Sine/Sine{Index}"
+    },
+    {
+      "locator": "_types_/SmartMotor/Temperature",
+      "field": "opcItemPath.bindType",
+      "value": "parameter"
+    },
+    {
+      "locator": "_types_/SmartMotor/Temperature",
+      "field": "opcItemPath.resolved",
+      "value": "ns=1;s=[Sim]_Meta:Sine/Sine1"
+    }
+  ],
+  "unresolved": [
+    {
+      "locator": "Line1/Batch",
+      "code": "behavior-unknown"
+    },
+    {
+      "locator": "Line1/Batch",
+      "code": "external-required"
+    },
+    {
+      "locator": "Line1/Counter#event/valueChanged",
+      "code": "behavior-unknown"
+    },
+    {
+      "locator": "Line1/Motor1/Speed",
+      "code": "external-required"
+    },
+    {
+      "locator": "Line1/Motor2/Speed",
+      "code": "external-required"
+    },
+    {
+      "locator": "Line1/Motor2/Temperature",
+      "code": "external-required"
+    },
+    {
+      "locator": "Line1/Scripted",
+      "code": "behavior-unknown"
+    },
+    {
+      "locator": "Line1/Setpoint",
+      "code": "external-required"
+    },
+    {
+      "locator": "Line1/Speed",
+      "code": "external-required"
+    },
+    {
+      "locator": "_types_/Motor/Speed",
+      "code": "external-required"
+    },
+    {
+      "locator": "_types_/SmartMotor/Speed",
+      "code": "external-required"
+    },
+    {
+      "locator": "_types_/SmartMotor/Temperature",
+      "code": "external-required"
+    },
+    {
+      "locator": "@external/db/MES",
+      "code": "external-required"
+    },
+    {
+      "locator": "@external/opc/Ignition OPC UA Server",
+      "code": "external-required"
+    }
+  ]
+}

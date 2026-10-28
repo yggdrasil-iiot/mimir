@@ -1,0 +1,65 @@
+[
+  {
+    "name": "Motor",
+    "parameters": {
+      "DeviceName": {
+        "dataType": "String",
+        "value": "Sim"
+      },
+      "Index": {
+        "dataType": "Integer",
+        "value": 1
+      }
+    },
+    "tagType": "UdtType",
+    "tags": [
+      {
+        "dataType": "Float8",
+        "expression": "{[.]Speed} / 15",
+        "name": "Load",
+        "tagType": "AtomicTag",
+        "valueSource": "expr"
+      },
+      {
+        "dataType": "Boolean",
+        "name": "Running",
+        "tagType": "AtomicTag",
+        "value": false,
+        "valueSource": "memory"
+      },
+      {
+        "dataType": "Float8",
+        "engHigh": 1500.0,
+        "engLow": 0.0,
+        "engUnit": "rpm",
+        "name": "Speed",
+        "opcItemPath": {
+          "bindType": "parameter",
+          "binding": "ns\u003d1;s\u003d[{DeviceName}]_Meta:Ramp/Ramp{Index}"
+        },
+        "opcServer": "Ignition OPC UA Server",
+        "tagType": "AtomicTag",
+        "valueSource": "opc"
+      }
+    ]
+  },
+  {
+    "name": "SmartMotor",
+    "tagType": "UdtType",
+    "typeId": "Motor",
+    "tags": [
+      {
+        "dataType": "Float8",
+        "engUnit": "degC",
+        "name": "Temperature",
+        "opcItemPath": {
+          "bindType": "parameter",
+          "binding": "ns\u003d1;s\u003d[{DeviceName}]_Meta:Sine/Sine{Index}"
+        },
+        "opcServer": "Ignition OPC UA Server",
+        "tagType": "AtomicTag",
+        "valueSource": "opc"
+      }
+    ]
+  }
+]
