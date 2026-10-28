@@ -6,11 +6,11 @@ Mimir (Mímir) — the northbound **modeler** of the Yggdrasil IIoT governance p
 
 ```
                 ┌─▶ Bifrost (govern) ─▶ Muninn (feed the UNS)    OPC-UA UDT derivation — built
-Mimir (read) ───┼─▶ Tyr (author mappings) ─▶ Bifrost (govern)    Ignition snapshots — built; Tyr reads 1.0.0 only
+Mimir (read) ───┼─▶ Tyr (author mappings) ─▶ Bifrost (govern)    Ignition snapshots — built; Tyr reads 1.0.0 and 1.1.0
                 └─▶ Bifrost (reconcile governed vs current)      reconciliation — planned
 ```
 
-One reader per input format: a source the plant already runs is interpreted here and nowhere else, and the other apps consume what Mimir publishes. The first vendor interpreter is built: Ignition 8.3.10 REST `tags/export` JSON, offline input; interpretation snapshot contract 1.1.0, namespace `ignition83`, rule version 1.2.0, interpreter 0.3.0. Tyr (Týr) reads 1.0.0 snapshots only, and Bifrost reconciliation is not built. See [the design note](docs/VENDOR-INTERPRETATION.md).
+One reader per input format: a source the plant already runs is interpreted here and nowhere else, and the other apps consume what Mimir publishes. The first vendor interpreter is built: Ignition 8.3.10 REST `tags/export` JSON, offline input; interpretation snapshot contract 1.1.0, namespace `ignition83`, rule version 1.2.0, interpreter 0.3.0. Tyr (Týr) reads interpretation snapshots of contract 1.0.0 and 1.1.0, including edge access (read/write/event) and node state, and Bifrost reconciliation is planned. See [the design note](docs/VENDOR-INTERPRETATION.md).
 
 Mimir is the *production* layer of canonical-model ownership; **Bifrost remains the authority** (it admits, versions, and is the registry-of-record). Mimir only proposes — a derived definition is not canonical until Bifrost's gate governs it. Concretely, Mimir:
 
