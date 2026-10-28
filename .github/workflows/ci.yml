@@ -1,4 +1,4 @@
-# The Mímir gate is deliberately cross-repo: Mímir only *proposes* a definition, and it is not
+# The Mimir gate is deliberately cross-repo: Mimir only *proposes* a definition, and it is not
 # canonical until Bifrost's `gates schema` admits it. Proving that means having Bifrost present,
 # so the sibling checkout below is the point of the gate, not a workaround for it.
 name: CI
@@ -20,6 +20,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: mimir
+
+      - name: Product names in ASCII
+        working-directory: mimir
+        run: bash scripts/check-ascii-names.sh
 
       - name: Check out Bifrost as a sibling
         uses: actions/checkout@v4

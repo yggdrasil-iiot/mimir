@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CHUNK-3 ACCEPTANCE GATE: prove the northbound Mímir modeler derives a canonical UdtDefinition
+# CHUNK-3 ACCEPTANCE GATE: prove the northbound Mimir modeler derives a canonical UdtDefinition
 # from a LIVE OPC-UA type browse, and that bifrost's ① schema gate governs it end-to-end —
 # a faithful derive is ADMITTED (initial registration + promote), and a breaking re-derive
 # (a member removed) is REJECTED under FORWARD compatibility.

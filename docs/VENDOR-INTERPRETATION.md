@@ -6,16 +6,16 @@ Status as of 2026-10-28: **the wire contract for interpretation snapshots exists
 
 **One reader per input format.** A vendor configuration — a Kepware project export, a PIO
 configuration set — is interpreted once, here, and published as an *interpretation snapshot*.
-Týr (mapping authoring) and Bifrost (reconciliation) consume that snapshot. Neither parses the
+Tyr (mapping authoring) and Bifrost (reconciliation) consume that snapshot. Neither parses the
 vendor file itself.
 
-Mímir is the place because it is already the read side of the plant: it browses a live OPC-UA type
+Mimir (Mímir) is the place because it is already the read side of the plant: it browses a live OPC-UA type
 space and derives a definition from what runs. A vendor's tag configuration is the same kind of
 input — something the plant already has — and reading it in two places would let two
 interpretations of one file disagree without anyone being told.
 
 The snapshot is coupled to its consumers the way every other Yggdrasil contract is: by published
-data. Mímir owns the schema; consumers bundle a copy. There is no shared code.
+data. Mimir owns the schema; consumers bundle a copy. There is no shared code.
 
 ## What goes in, what comes out
 
