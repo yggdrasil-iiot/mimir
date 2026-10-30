@@ -22,7 +22,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 
 /**
- * Live shell (Milo 1.0.0): browse an OPC-UA ObjectType's declared member Variables into a list of
+ * Live shell (Milo 1.1.8): browse an OPC-UA ObjectType's declared member Variables into a list of
  * pure {@link BrowsedMember} facts (name + numeric DataType id + optional EURange low/high). No
  * business logic and no test/omit hooks live here — this browses FAITHFULLY; the {@code --omit}
  * projection and the mapping to a canonical definition are applied by the caller
