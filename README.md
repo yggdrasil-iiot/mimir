@@ -32,15 +32,17 @@ java -jar target/mimir.jar derive <endpoint> <nsUri> <typeBrowseName> <templateR
      [--omit <member>]
 
 # Interpret an Ignition 8.3.10 tag export and write snapshot documents to <outDir>
-java -jar target/mimir.jar ignition-interpret <export.json> <name> <outDir>
+java -jar target/mimir.jar ignition-interpret <export.json> <name> <outDir> --product-version <v>
 
 # Score an Ignition 8.3.10 tag export against an evaluation key
-java -jar target/mimir.jar ignition-score <export.json> <key.json> [--details]
+java -jar target/mimir.jar ignition-score <export.json> <key.json> --product-version <v> [--details]
 ```
 
 `--omit <member>` deliberately drops a member (a test hook for exercising Bifrost's breaking-change rejection — `member.removed`), never used on the faithful derive path.
 
 `ignition-interpret` validates contracts and pins, enforces profile limits (refusing exports exceeding 16 MiB, 100,000 nodes, or folder/UDT depth 64 with `ignition.limit-exceeded`), and writes `source-bundle.json`, `interpretation-profile.json`, and `interpretation-snapshot.json`. The export file's modification time is recorded as the acquisition timestamp.
+
+Both `ignition-interpret` and `ignition-score` require `--product-version <v>` for the Ignition version stated by the provider for the export. Because the `tags/export` JSON does not carry the gateway version, Mimir cannot observe it and records the value as a `version` product claim with basis `stated-by-provider`. Under the profile's `unknownVersionPolicy: reject`, omitting the option is refused with `ignition.version-unknown`, a version the profile does not list (currently only `8.3.10`) is refused with `ignition.version-unsupported`, and nothing is written or scored in either case.
 
 `ignition-score` validates the generated documents, compares them with an answer key, and prints expected/matched/missing/extra counts with recall and precision per category. `--details` displays individual mismatch rows.
 

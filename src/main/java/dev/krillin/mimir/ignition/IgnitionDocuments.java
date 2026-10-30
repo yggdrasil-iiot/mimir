@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import dev.krillin.mimir.interpretation.ContractViolation;
 import dev.krillin.mimir.interpretation.InterpretationDigest;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.List;
 
 /**
  * Wraps one interpreted Ignition export into the three pinned 1.1.0 documents: source bundle, interpretation
@@ -18,6 +20,7 @@ public final class IgnitionDocuments {
 
     public static final String ARTIFACT_ID = "export";
     public static final String INTERPRETER_VERSION = "0.3.0";
+    public static final List<String> SUPPORTED_VERSIONS = List.of("8.3.10");
     private static final JsonNodeFactory F = JsonNodeFactory.instance;
 
     public record Set(ObjectNode bundle, ObjectNode profile, ObjectNode snapshot) {}
@@ -28,8 +31,18 @@ public final class IgnitionDocuments {
      * @param name         lower-case id stem for the three documents, e.g. {@code lab/dev-1}
      * @param exportPath   the export's path inside the bundle, relative
      * @param obtainedAt   when the export was taken, RFC 3339 UTC
+     * @param productVersion the Ignition version the provider states for the export; the export does not carry
+     *                     it. Missing or outside {@link #SUPPORTED_VERSIONS} is refused, as the profile's
+     *                     {@code unknownVersionPolicy} says
      */
-    public static Set build(String name, byte[] export, String exportPath, String obtainedAt) {
+    public static Set build(String name, byte[] export, String exportPath, String obtainedAt, String productVersion) {
+        if (productVersion == null || productVersion.isBlank()) {
+            throw new ContractViolation("ignition.version-unknown", "the provider did not state the Ignition version");
+        }
+        if (!SUPPORTED_VERSIONS.contains(productVersion)) {
+            throw new ContractViolation("ignition.version-unsupported",
+                    "Ignition " + productVersion + " is outside the profile's versions " + SUPPORTED_VERSIONS);
+        }
         ObjectNode bundle = doc("source-bundle", name + "/bundle");
         ObjectNode bb = bundle.putObject("body");
         bb.put("origin", "synthetic");
@@ -45,7 +58,7 @@ public final class IgnitionDocuments {
         obtained.put("method", "export");
         ArrayNode product = bb.putArray("productClaims");
         product.addObject().put("subject", "product").put("value", "ignition").put("basis", "stated-by-provider");
-        product.addObject().put("subject", "version").put("value", "8.3.10").put("basis", "stated-by-provider");
+        product.addObject().put("subject", "version").put("value", productVersion).put("basis", "stated-by-provider");
         product.addObject().put("subject", "format").put("value", "tags/export json").put("basis", "stated-by-provider");
         seal(bundle);
 
@@ -57,7 +70,7 @@ public final class IgnitionDocuments {
         interp.put("implementationDigest", implementationDigest());
         ObjectNode supports = pb.putArray("supports").addObject();
         supports.put("product", "ignition");
-        supports.putArray("versions").add("8.3.10");
+        SUPPORTED_VERSIONS.forEach(supports.putArray("versions")::add);
         supports.putArray("inputFormats").add("tags/export json");
         pb.put("unknownVersionPolicy", "reject");
         ArrayNode rules = pb.putArray("rules");
