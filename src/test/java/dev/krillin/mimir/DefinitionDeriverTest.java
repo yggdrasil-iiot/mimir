@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -12,14 +13,7 @@ class DefinitionDeriverTest {
 
     @Test
     void derivesUdtDefinitionFromBrowsedMembers() {
-        List<BrowsedMember> browsed = List.of(
-                new BrowsedMember("Rpm", 11, 0.0, 3000.0),
-                new BrowsedMember("Temp", 11, 0.0, 450.0),
-                new BrowsedMember("Running", 1, null, null),
-                new BrowsedMember("Secret", 11, null, null)
-        );
-
-        UdtDefinition result = DefinitionDeriver.derive(browsed, "MixerType", "Line1-Mixer", "1.0.0");
+        UdtDefinition result = DefinitionDeriver.derive(browsed("urn:bifrost:opcua:sim"), "MixerType", "Line1-Mixer", "1.0.0");
 
         assertEquals(4, result.members().size());
 
@@ -38,6 +32,24 @@ class DefinitionDeriverTest {
 
         assertEquals("Line1-Mixer", result.templateRef());
         assertEquals("1.0.0", result.version());
+    }
+
+    @Test
+    void nodeIdsAreBrowseFactsAndDoNotChangeTheDerivedDefinition() {
+        UdtDefinition a = DefinitionDeriver.derive(browsed("urn:bifrost:opcua:sim"), "MixerType", "Line1-Mixer", "1.0.0");
+        UdtDefinition b = DefinitionDeriver.derive(browsed("urn:other:server"), "MixerType", "Line1-Mixer", "1.0.0");
+        assertEquals(DefinitionJson.toJson(a), DefinitionJson.toJson(b));
+        assertFalse(DefinitionJson.toJson(a).contains("nsu="));
+    }
+
+    private static List<BrowsedMember> browsed(String nsUri) {
+        String ns = "nsu=" + nsUri + ";s=MixerType/";
+        return List.of(
+                new BrowsedMember("Rpm", 11, 0.0, 3000.0, ns + "Rpm", "i=11"),
+                new BrowsedMember("Temp", 11, 0.0, 450.0, ns + "Temp", "i=11"),
+                new BrowsedMember("Running", 1, null, null, ns + "Running", "i=1"),
+                new BrowsedMember("Secret", 11, null, null, ns + "Secret", "i=11")
+        );
     }
 
     @Test

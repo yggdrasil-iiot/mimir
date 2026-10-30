@@ -73,6 +73,10 @@ public final class MimirMain {
                 System.out.println("[MIMIR]   " + m.name() + " : " + m.type()
                         + " range=" + (m.range() == null ? "null" : "[" + m.range().low() + ", " + m.range().high() + "]"));
             }
+            for (BrowsedMember m : members) {
+                System.out.println("[MIMIR]   browsed " + m.name() + " node=" + m.nodeId()
+                        + " dataType=" + m.dataTypeNodeId());
+            }
         } catch (Exception e) {
             System.err.println("[MIMIR] error: " + e.getMessage());
             exitCode = 2;

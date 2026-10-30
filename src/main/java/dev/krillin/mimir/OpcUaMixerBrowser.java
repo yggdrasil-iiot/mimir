@@ -23,7 +23,8 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 
 /**
  * Live shell (Milo 1.1.8): browse an OPC-UA ObjectType's declared member Variables into a list of
- * pure {@link BrowsedMember} facts (name + numeric DataType id + optional EURange low/high). No
+ * pure {@link BrowsedMember} facts (name + numeric DataType id + optional EURange low/high + the
+ * member and DataType NodeIds, namespace-URI qualified). No
  * business logic and no test/omit hooks live here — this browses FAITHFULLY; the {@code --omit}
  * projection and the mapping to a canonical definition are applied by the caller
  * ({@link MimirMain} / {@link DefinitionDeriver}).
@@ -63,24 +64,26 @@ public final class OpcUaMixerBrowser {
             NodeId memberNode = r.getNodeId().toNodeId(nt).orElse(null);
             if (memberNode == null) continue;
 
-            int dataTypeId = readDataTypeId(client, memberNode);
+            NodeId dtNode = readDataType(client, memberNode);
+            int dataTypeId = ((UInteger) dtNode.getIdentifier()).intValue();
             double[] range = readEuRange(client, nt, memberNode); // null-marker via NaN sentinel below
             Double low = range == null ? null : range[0];
             Double high = range == null ? null : range[1];
 
-            members.add(new BrowsedMember(name, dataTypeId, low, high));
+            // expanded(nt) throws if the index is not in the server's table, so an index never leaks out as if it were stable.
+            members.add(new BrowsedMember(name, dataTypeId, low, high,
+                    memberNode.expanded(nt).toParseableString(), dtNode.expanded(nt).toParseableString()));
         }
         return members;
     }
 
-    /** Read the member's DataType attribute → numeric NodeId identifier. */
-    private static int readDataTypeId(OpcUaClient client, NodeId memberNode) throws Exception {
+    /** Read the member's DataType attribute. */
+    private static NodeId readDataType(OpcUaClient client, NodeId memberNode) throws Exception {
         ReadValueId rvid = new ReadValueId(
                 memberNode, AttributeId.DataType.uid(), null, QualifiedName.NULL_VALUE);
         var resp = client.read(0.0, TimestampsToReturn.Neither, List.of(rvid));
         DataValue dtDv = resp.getResults()[0];
-        NodeId dtNode = (NodeId) dtDv.getValue().getValue();
-        return ((UInteger) dtNode.getIdentifier()).intValue();
+        return (NodeId) dtDv.getValue().getValue();
     }
 
     /**
