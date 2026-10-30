@@ -60,7 +60,7 @@ Both `ignition-interpret` and `ignition-score` require `--product-version <v>` f
 
 ## Dependencies
 
-Eclipse Milo 1.0.0 (OPC-UA client) · Jackson 2.17.
+Eclipse Milo 1.1.8 (OPC-UA client) · Jackson 2.17.
 
 ## License
 
