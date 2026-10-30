@@ -13,6 +13,7 @@ import dev.krillin.mimir.interpretation.InterpretationContract;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -20,9 +21,12 @@ import java.util.Map;
  * Ignition subcommands:
  *
  * <pre>
- *   ignition-interpret &lt;export.json&gt; &lt;name&gt; &lt;outDir&gt;   bundle, profile and snapshot, checked against the contract
- *   ignition-score &lt;export.json&gt; &lt;key.json&gt; [--details]  interpret, then compare with an answer key
+ *   ignition-interpret &lt;export.json&gt; &lt;name&gt; &lt;outDir&gt; --product-version &lt;v&gt;   bundle, profile and snapshot, checked against the contract
+ *   ignition-score &lt;export.json&gt; &lt;key.json&gt; --product-version &lt;v&gt; [--details]  interpret, then compare with an answer key
  * </pre>
+ *
+ * {@code --product-version} is the Ignition version the provider states; the export does not carry it. Without it,
+ * or with a version the profile does not support, nothing is written or scored.
  *
  * {@code ignition-score} prints counts only unless {@code --details} is given, so it can measure a held-out
  * key without showing its rows.
@@ -33,12 +37,16 @@ final class IgnitionCli {
 
     private IgnitionCli() {}
 
-    static int run(String[] args) throws Exception {
+    static int run(String[] argv) throws Exception {
+        List<String> rest = new ArrayList<>(List.of(argv));
+        String version = option(rest, "--product-version");
+        String[] args = rest.toArray(String[]::new);
+        if (args.length == 0) return usage();
         try {
             switch (args[0]) {
                 case "ignition-interpret" -> {
                     if (args.length != 4) return usage();
-                    IgnitionDocuments.Set docs = interpret(Path.of(args[1]), args[2]);
+                    IgnitionDocuments.Set docs = interpret(Path.of(args[1]), args[2], version);
                     Path out = Path.of(args[3]);
                     Files.createDirectories(out);
                     Files.writeString(out.resolve("source-bundle.json"), OUT.writeValueAsString(docs.bundle()) + "\n");
@@ -53,7 +61,7 @@ final class IgnitionCli {
                 case "ignition-score" -> {
                     if (args.length < 3) return usage();
                     boolean details = List.of(args).contains("--details");
-                    IgnitionDocuments.Set docs = interpret(Path.of(args[1]), "score/run");
+                    IgnitionDocuments.Set docs = interpret(Path.of(args[1]), "score/run", version);
                     JsonNode expected = new ObjectMapper().readTree(Files.readString(Path.of(args[2])));
                     AnswerKey.Result r = AnswerKey.compare(expected, AnswerKey.project(docs.snapshot()));
                     for (Map.Entry<String, AnswerKey.Score> e : r.scores().entrySet()) {
@@ -85,10 +93,10 @@ final class IgnitionCli {
     }
 
     /** Interprets and checks the result against the contract before anything is written or scored. */
-    private static IgnitionDocuments.Set interpret(Path export, String name) throws Exception {
+    private static IgnitionDocuments.Set interpret(Path export, String name, String version) throws Exception {
         byte[] bytes = Files.readAllBytes(export);
         IgnitionDocuments.Set docs = IgnitionDocuments.build(name, bytes, export.getFileName().toString(),
-                Files.getLastModifiedTime(export).toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
+                Files.getLastModifiedTime(export).toInstant().truncatedTo(ChronoUnit.SECONDS).toString(), version);
         InterpretationContract.checkPinned(reparse(docs.snapshot()), reparse(docs.bundle()), reparse(docs.profile()));
         return docs;
     }
@@ -97,12 +105,22 @@ final class IgnitionCli {
         return InterpretationContract.parse(OUT.writeValueAsString(n));
     }
 
+    /** Removes {@code name value} from the arguments and returns the value, or null when the option is absent. */
+    private static String option(List<String> args, String name) {
+        int i = args.indexOf(name);
+        if (i < 0 || i + 1 >= args.size()) return null;
+        String value = args.get(i + 1);
+        args.subList(i, i + 2).clear();
+        return value;
+    }
+
     private static String pct(Double d) {
         return d == null ? "n/a" : String.format("%.1f%%", d * 100);
     }
 
     private static int usage() {
-        System.err.println("Usage: ignition-interpret <export.json> <name> <outDir> | ignition-score <export.json> <key.json> [--details]");
+        System.err.println("Usage: ignition-interpret <export.json> <name> <outDir> --product-version <v>"
+                + " | ignition-score <export.json> <key.json> --product-version <v> [--details]");
         return 2;
     }
 }

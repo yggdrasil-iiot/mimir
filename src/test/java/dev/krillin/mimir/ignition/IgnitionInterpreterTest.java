@@ -28,7 +28,37 @@ class IgnitionInterpreterTest {
     static final ObjectMapper M = new ObjectMapper();
 
     static IgnitionDocuments.Set docs(byte[] export) {
-        return IgnitionDocuments.build("test/run", export, "export.json", "2026-10-27T00:00:00Z");
+        return IgnitionDocuments.build("test/run", export, "export.json", "2026-10-27T00:00:00Z", "8.3.10");
+    }
+
+    static String versionCode(String version) throws Exception {
+        byte[] export = Files.readAllBytes(DEV1.resolve("export.json"));
+        return assertThrows(ContractViolation.class,
+                () -> IgnitionDocuments.build("test/run", export, "export.json", "2026-10-27T00:00:00Z", version)).code();
+    }
+
+    @Test
+    void anUnstatedVersionIsRefused() throws Exception {
+        assertEquals("ignition.version-unknown", versionCode(null));
+        assertEquals("ignition.version-unknown", versionCode(" "));
+    }
+
+    @Test
+    void aVersionOutsideTheProfileIsRefused() throws Exception {
+        assertEquals("ignition.version-unsupported", versionCode("8.1.0"));
+        assertEquals("ignition.version-unsupported", versionCode("8.3.10 "));
+    }
+
+    @Test
+    void theStatedVersionIsRecordedAsTheProviderStatedIt() throws Exception {
+        IgnitionDocuments.Set d = docs(Files.readAllBytes(DEV1.resolve("export.json")));
+        JsonNode version = null;
+        for (JsonNode c : d.bundle().get("body").get("productClaims")) {
+            if (c.get("subject").asText().equals("version")) version = c;
+        }
+        assertEquals("8.3.10", version.get("value").asText());
+        assertEquals("stated-by-provider", version.get("basis").asText());
+        assertEquals(IgnitionDocuments.SUPPORTED_VERSIONS.size(), d.profile().get("body").get("supports").get(0).get("versions").size());
     }
 
     static JsonNode reparse(JsonNode n) throws Exception {
