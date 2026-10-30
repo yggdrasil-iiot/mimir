@@ -103,10 +103,14 @@ DEF_BREAKING_WIN="$(cygpath -m "$(pwd)/$WORK/def-breaking.json")"
 # ---------------------------------------------------------------------------
 echo "[GATE] step 3: ACCEPT — mimir derives live MixerType -> schema admits + promotes"
 set +e
-java -jar "$MIMIR_JAR_WIN" derive "$ENDPOINT" "$NS_URI" "$TYPE" "$REF" 1.0.0 "$DEF_WIN"
-code=$?
+java -jar "$MIMIR_JAR_WIN" derive "$ENDPOINT" "$NS_URI" "$TYPE" "$REF" 1.0.0 "$DEF_WIN" | tee "$WORK/derive.log"
+code=${PIPESTATUS[0]}
 set -e
 [ "$code" -eq 0 ] || fail "mimir derive (accept) returned $code — expected 0"
+# The browse keeps each member's NodeId by namespace URI, not by the server's index.
+ncount="$({ grep -c "browsed .* node=nsu=$NS_URI;" "$WORK/derive.log" || true; } | tr -d '[:space:]')"
+[ "$ncount" -eq 4 ] || fail "expected 4 browsed members with node=nsu=$NS_URI;..., got $ncount"
+grep -q "node=ns=" "$WORK/derive.log" && fail "a browsed NodeId kept a namespace index"
 [ -f "$WORK/def.json" ] || fail "mimir did not write $WORK/def.json"
 # mimir emits COMPACT single-line JSON, so count occurrences (grep -o), not matching lines (grep -c).
 # This counts MEMBER names; it is exact only because `params` is ALWAYS empty here (a Param also
@@ -115,7 +119,7 @@ mcount="$(grep -o '"name"' "$WORK/def.json" | wc -l | tr -d '[:space:]')"
 [ "$mcount" -eq 4 ] || fail "expected 4 members in def.json, got $mcount"
 grep -Eq '"high"[[:space:]]*:[[:space:]]*3000(\.0)?' "$WORK/def.json" \
   || fail "def.json missing Rpm EURange high=3000 (EURange decode failed?)"
-echo "[GATE] derive OK: 4 members, Rpm high=3000 present"
+echo "[GATE] derive OK: 4 members, Rpm high=3000 present, NodeIds by namespace URI"
 
 set +e
 java -jar "$GATES_JAR_WIN" schema "$REGISTRY_WIN" "$DEF_WIN" --promote

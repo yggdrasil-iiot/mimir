@@ -1,6 +1,6 @@
 # Vendor configuration interpretation — design note
 
-Status as of 2026-10-28: **the wire contract for interpretation snapshots exists** (versions 1.0.0 and 1.1.0, under `contracts/interpretation/1.0.0/` and `contracts/interpretation/1.1.0/`, described in `contracts/interpretation/README.md`; 1.1.0 adds read/write/event access on dependencies and an explicit state marker). The first interpreter is built: Ignition 8.3.10 REST `tags/export` JSON offline input, interpretation snapshot contract 1.1.0, namespace `ignition83`, rule version 1.2.0, interpreter 0.3.0, backed by 129 passing tests with enforced profile limits and the published `dev-1` gateway export.
+Status as of 2026-10-28: **the wire contract for interpretation snapshots exists** (versions 1.0.0 and 1.1.0, under `contracts/interpretation/1.0.0/` and `contracts/interpretation/1.1.0/`, described in `contracts/interpretation/README.md`; 1.1.0 adds read/write/event access on dependencies and an explicit state marker). The first interpreter is built: Ignition 8.3.10 REST `tags/export` JSON offline input, interpretation snapshot contract 1.1.0, namespace `ignition83`, rule version 1.2.0, interpreter 0.3.0, backed by 130 passing tests with enforced profile limits and the published `dev-1` gateway export.
 
 ## The decision
 
@@ -76,7 +76,7 @@ Ignition interpretation exists and follows the same single-reader rule as the re
 
 | Product | Version | Input | Evidence in hand |
 |---|---|---|---|
-| Ignition | 8.3.10 | REST `tags/export` JSON | Implementation, mapping and key specifications, published dev-1 gateway export and key, local Docker lab, 129 passing tests, and blind evaluation across 10 third-party exports. |
+| Ignition | 8.3.10 | REST `tags/export` JSON | Implementation, mapping and key specifications, published dev-1 gateway export and key, local Docker lab, 130 passing tests, and blind evaluation across 10 third-party exports. |
 | Kepware | — | — | none — product, version, driver and export format not yet obtained |
 | BEAN PIO | — | — | public product description only |
 | BEAN TAG MANAGER | — | — | product name only; its relation to the public TM Core / TM Connector is unconfirmed |
@@ -95,7 +95,7 @@ depth or size). Expected results are written independently of the interpreter un
 
 ## Ignition 8.3.10 — evidence and measured accuracy
 
-The Ignition 8.3.10 interpreter (interpreter 0.3.0, rule version 1.2.0, namespace `ignition83`) maps offline REST `tags/export` JSON exports into interpretation snapshot contract 1.1.0. It covers folders, UDT inheritance, overrides, parameters, tag sources (OPC, memory, expression, reference, derived, and database), dependencies with read/write/event access, alarm configuration, event-script targets, and expression-state classification. By design, expressions, scripts, and SQL are parsed and classified as static configuration without runtime execution, maintaining a strictly design-time, read-only boundary. 129 tests pass across the suite.
+The Ignition 8.3.10 interpreter (interpreter 0.3.0, rule version 1.2.0, namespace `ignition83`) maps offline REST `tags/export` JSON exports into interpretation snapshot contract 1.1.0. It covers folders, UDT inheritance, overrides, parameters, tag sources (OPC, memory, expression, reference, derived, and database), dependencies with read/write/event access, alarm configuration, event-script targets, and expression-state classification. By design, expressions, scripts, and SQL are parsed and classified as static configuration without runtime execution, maintaining a strictly design-time, read-only boundary. 130 tests pass across the suite.
 
 The public `dev-1` scenario was authored from scratch and exported from a real 8.3.10 gateway. Its export and answer key are published in `fixtures/ignition/8.3.10/dev-1`, covering UDT inheritance, overrides, parameters, OPC/memory/expression/reference/derived/database tags, alarm configuration, and event scripts. The interpreter matches the key in every category.
 
