@@ -45,7 +45,7 @@
 
 ## Implementations
 
-**Two implementations verify the canonical serialization.** The Java checker (`dev.krillin.mimir.interpretation`) and an independent, standard-library-only Python script (`scripts/interpretation_digest.py`) are tested against each other. The fixture digests are stamped by the Python script and verified by the Java tests, so a disagreement fails the build.
+**Two implementations verify the canonical serialization.** The Java checker (`yggdrasil.mimir.interpretation`) and an independent, standard-library-only Python script (`scripts/interpretation_digest.py`) are tested against each other. The fixture digests are stamped by the Python script and verified by the Java tests, so a disagreement fails the build.
 - `python3 scripts/interpretation_digest.py vectors fixtures/interpretation/1.0.0/jcs-vectors.json`
 - `python3 scripts/interpretation_digest.py check fixtures/interpretation`
 - `mvn test`
@@ -60,4 +60,4 @@
 
 ## Exclusions
 
-The contract package itself includes no interpreter and no real product sample. The Ignition interpreter lives in `src/main/java/dev/krillin/mimir/ignition/`, and its specification and dev-1 export and key live in `fixtures/ignition/`.
+The contract package itself includes no interpreter and no real product sample. The Ignition interpreter lives in `src/main/java/yggdrasil/mimir/ignition/`, and its specification and dev-1 export and key live in `fixtures/ignition/`.
