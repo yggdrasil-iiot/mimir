@@ -75,7 +75,7 @@ Apply configuration in this order:
 
 Merge members by native name, recursively. Materialize inherited members even if omitted from `tags`. Name-only exported members retain inherited properties. A member object does not erase unspecified properties. Explicit scalar properties replace inherited scalars; explicit `null` remains null rather than meaning “absent.” Merge parameters by parameter name, alarms by alarm name, and event scripts by `eventid`. Other arrays replace as whole values. Unknown deletion/reset encodings are unsupported rather than interpreted as ordinary values.
 
-Emit one `inherits` edge for each UDT instance or derived UDT type, with `access: read`: the instance's effective configuration is read from its type definition. (Decided 2026-10-27; Codex's draft had `unknown`.) Do not emit member-level `inherits` or `overrides` edges in this profile; effective claims preserve the result and its evidence.
+Emit one `inherits` edge for each UDT instance or derived UDT type, with `access: read`: the instance's effective configuration is read from its type definition. (Decided 2026-10-27; an earlier draft had `unknown`.) Do not emit member-level `inherits` or `overrides` edges in this profile; effective claims preserve the result and its evidence.
 
 Resolve parameter values in the containing UDT scope: ancestor default, descendant override, then instance override. Nested UDTs establish their own scope, with explicit parameter bindings evaluated from the containing scope. Type-definition members are interpreted using their type's effective defaults, not an arbitrary instance.
 

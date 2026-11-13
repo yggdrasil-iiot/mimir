@@ -101,7 +101,7 @@ The public `dev-1` scenario was authored from scratch and exported from a real 8
 
 The local test lab (`ignition-lab/`) runs an Ignition Docker gateway under a trial licence. `lab.py` authenticates using a session login and CSRF token to import and export tag configurations.
 
-Blind evaluation was conducted on a third, unseen set of 10 public third-party exports from 8 authors, each round-tripped through Ignition 8.3.10 across 332 imports with 0 failures. Answer keys were written from SPEC 1.2.0 alone by OpenAI Codex and cross-checked row by row by Anthropic Claude Fable (0 key errors; 314 rows = 5.0% where the spec allows two readings were kept). The interpreter author saw only counts. Two earlier sets drove specification amendments (1.1.0 and 1.2.0) and were retired, so every reported number comes from data the interpreter had not seen. Evaluation exports remain private because most source licences do not permit redistribution.
+Blind evaluation was conducted on a third, unseen set of 10 public third-party exports from 8 authors, each round-tripped through Ignition 8.3.10 across 332 imports with 0 failures. Answer keys were written from SPEC 1.2.0 alone by an AI reviewer and cross-checked row by row by a second AI reviewer (0 key errors; 314 rows = 5.0% where the spec allows two readings were kept). The interpreter author saw only counts. Two earlier sets drove specification amendments (1.1.0 and 1.2.0) and were retired, so every reported number comes from data the interpreter had not seen. Evaluation exports remain private because most source licences do not permit redistribution.
 
 | Category | Expected | Matched | Extra | Recall | Precision |
 |---|---|---|---|---|---|
