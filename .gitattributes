@@ -6,3 +6,5 @@ fixtures/interpretation/** -text
 ignition-lab/exports/** -text
 ignition-lab/scenarios/** -text
 fixtures/ignition/** -text
+# Line2 definition candidates are pinned byte for byte by consumers.
+fixtures/line2/** -text
